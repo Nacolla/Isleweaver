@@ -1,0 +1,14 @@
+{
+  "required": false,
+  "package": "com.thebeyond.isleweaver.mixin.dimensional_tears",
+  "compatibilityLevel": "JAVA_21",
+  "refmap": "isleweaver.refmap.json",
+  "mixins": [
+    "DimensionalTearsOceanFeatureMixin",
+    "TeleportHelperMixin"
+  ],
+  "server": [],
+  "injectors": {
+    "defaultRequire": 0
+  }
+}

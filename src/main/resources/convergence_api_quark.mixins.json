@@ -1,0 +1,14 @@
+{
+  "required": false,
+  "package": "com.thebeyond.isleweaver.mixin.quark",
+  "compatibilityLevel": "JAVA_21",
+  "refmap": "isleweaver.refmap.json",
+  "mixins": [
+    "SpiralSpireGeneratorMixin",
+    "ZetaGeneratorGetBiomeMixin"
+  ],
+  "server": [],
+  "injectors": {
+    "defaultRequire": 0
+  }
+}

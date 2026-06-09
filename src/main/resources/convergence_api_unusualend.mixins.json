@@ -1,0 +1,14 @@
+{
+  "required": true,
+  "package": "com.thebeyond.isleweaver.mixin.unusualend",
+  "compatibilityLevel": "JAVA_21",
+  "refmap": "isleweaver.refmap.json",
+  "mixins": [
+    "BiomeFilterMixin",
+    "HeightRangePlacementVoronoiMixin"
+  ],
+  "server": [],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "required": true,
+  "package": "com.thebeyond.isleweaver.mixin.enderscape",
+  "compatibilityLevel": "JAVA_21",
+  "refmap": "isleweaver.refmap.json",
+  "mixins": [
+    "HeightRangePlacementAccessor",
+    "PlacedFeatureAccessor",
+    "UniformHeightAccessor"
+  ],
+  "server": [],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

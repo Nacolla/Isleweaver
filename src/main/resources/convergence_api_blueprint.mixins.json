@@ -1,0 +1,13 @@
+{
+  "required": true,
+  "package": "com.thebeyond.isleweaver.mixin.blueprint",
+  "compatibilityLevel": "JAVA_21",
+  "refmap": "isleweaver.refmap.json",
+  "mixins": [
+    "ModdedBiomeSlicesManagerMixin"
+  ],
+  "server": [],
+  "injectors": {
+    "defaultRequire": 0
+  }
+}

@@ -1,0 +1,131 @@
+modLoader="javafml"
+loaderVersion="${loader_version_range}"
+license="${mod_license}"
+
+[[mixins]]
+config = "convergence_api_astrological.mixins.json"
+[[mixins]]
+config = "convergence_api_enderscape.mixins.json"
+[[mixins]]
+config = "convergence_api_betterend.mixins.json"
+[[mixins]]
+config = "convergence_api_wover.mixins.json"
+[[mixins]]
+config = "convergence_api_stellarity.mixins.json"
+[[mixins]]
+config = "convergence_api_bclib.mixins.json"
+[[mixins]]
+config = "convergence_api_quark.mixins.json"
+[[mixins]]
+config = "convergence_api_phantasm.mixins.json"
+[[mixins]]
+config = "convergence_api_dimensional_tears.mixins.json"
+[[mixins]]
+config = "convergence_api_unusualend.mixins.json"
+[[mixins]]
+config = "convergence_api_blueprint.mixins.json"
+[[mixins]]
+config = "convergence_api_core.mixins.json"
+
+[[mods]]
+modId="${mod_id}"
+version="${mod_version}"
+displayName="${mod_name}"
+authors="${mod_authors}"
+description='''${mod_description}'''
+
+[[dependencies.${mod_id}]]
+modId="neoforge"
+type="required"
+versionRange="${neo_version_range}"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.${mod_id}]]
+modId="minecraft"
+type="required"
+versionRange="${minecraft_version_range}"
+ordering="NONE"
+side="BOTH"
+
+# Hard dependency on The Beyond — the addon's reason for existing is to plug into
+# Beyond's compat API. Loading without Beyond would crash on every reference.
+[[dependencies.${mod_id}]]
+modId="the_beyond"
+type="required"
+versionRange="[${the_beyond_version},)"
+ordering="AFTER"
+side="BOTH"
+
+# Optional dependencies: each compat module gates itself at runtime via ModList,
+# so listing them here is informational + ordering. Loading without any of them
+# leaves the addon's hooks inert.
+[[dependencies.${mod_id}]]
+modId="astrological"
+type="optional"
+versionRange="*"
+ordering="BEFORE"
+side="BOTH"
+
+[[dependencies.${mod_id}]]
+modId="enderscape"
+type="optional"
+versionRange="*"
+ordering="BEFORE"
+side="BOTH"
+
+[[dependencies.${mod_id}]]
+modId="betterend"
+type="optional"
+versionRange="*"
+ordering="BEFORE"
+side="BOTH"
+
+[[dependencies.${mod_id}]]
+modId="wover"
+type="optional"
+versionRange="*"
+ordering="BEFORE"
+side="BOTH"
+
+[[dependencies.${mod_id}]]
+modId="stellarity"
+type="optional"
+versionRange="*"
+ordering="BEFORE"
+side="BOTH"
+
+[[dependencies.${mod_id}]]
+modId="bclib"
+type="optional"
+versionRange="*"
+ordering="BEFORE"
+side="BOTH"
+
+[[dependencies.${mod_id}]]
+modId="quark"
+type="optional"
+versionRange="*"
+ordering="BEFORE"
+side="BOTH"
+
+[[dependencies.${mod_id}]]
+modId="phantasm"
+type="optional"
+versionRange="*"
+ordering="BEFORE"
+side="BOTH"
+
+[[dependencies.${mod_id}]]
+modId="dimensional_tears"
+type="optional"
+versionRange="*"
+ordering="BEFORE"
+side="BOTH"
+
+[[dependencies.${mod_id}]]
+modId="unusualend"
+type="optional"
+versionRange="*"
+ordering="BEFORE"
+side="BOTH"

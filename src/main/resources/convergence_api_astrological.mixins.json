@@ -1,0 +1,11 @@
+{
+  "required": true,
+  "package": "com.thebeyond.isleweaver.mixin.astrological",
+  "compatibilityLevel": "JAVA_21",
+  "plugin": "com.thebeyond.isleweaver.mixin.astrological.AstrologicalMixinDisabler",
+  "mixins": [],
+  "server": [],
+  "injectors": {
+    "defaultRequire": 0
+  }
+}

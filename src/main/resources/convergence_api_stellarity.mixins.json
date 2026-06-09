@@ -1,0 +1,16 @@
+{
+  "required": true,
+  "package": "com.thebeyond.isleweaver.mixin.stellarity",
+  "compatibilityLevel": "JAVA_21",
+  "refmap": "isleweaver.refmap.json",
+  "mixins": [
+    "EndPodiumFeatureMixin",
+    "EndSpikeHeightFixMixin",
+    "SpikeFeaturePlacementStellarityMixin",
+    "SpikeFeatureStellarityCompatMixin"
+  ],
+  "server": [],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

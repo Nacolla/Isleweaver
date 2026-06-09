@@ -1,0 +1,14 @@
+{
+  "required": false,
+  "package": "com.thebeyond.isleweaver.mixin.wover",
+  "compatibilityLevel": "JAVA_21",
+  "refmap": "isleweaver.refmap.json",
+  "mixins": [
+    "WoverChunkGeneratorMixin",
+    "WoverSurfaceRuleUtilMixin"
+  ],
+  "server": [],
+  "injectors": {
+    "defaultRequire": 0
+  }
+}

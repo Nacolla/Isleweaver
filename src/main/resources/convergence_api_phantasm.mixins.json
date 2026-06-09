@@ -1,0 +1,13 @@
+{
+  "required": false,
+  "package": "com.thebeyond.isleweaver.mixin.phantasm",
+  "compatibilityLevel": "JAVA_21",
+  "refmap": "isleweaver.refmap.json",
+  "mixins": [
+    "DragonMintBlockMixin"
+  ],
+  "server": [],
+  "injectors": {
+    "defaultRequire": 0
+  }
+}
