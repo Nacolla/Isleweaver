@@ -21,8 +21,7 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 
-// forces every End biome onto one global per-step feature order so vanilla FeatureSorter's
-// graph stays a DAG and can't throw "Feature order cycle"
+// forces every End biome onto one global per-step feature order so vanilla FeatureSorter's graph stays a DAG and can't throw "Feature order cycle"
 public final class EndFeatureOrderNormalizer {
     private EndFeatureOrderNormalizer() {}
 
@@ -59,13 +58,13 @@ public final class EndFeatureOrderNormalizer {
             }
             if (changed) {
                 ((BiomeGenerationSettingsAccessor) (Object) gs)
-                        .convergence$setFeatures(List.copyOf(newSteps));
+                        .isleweaver$setFeatures(List.copyOf(newSteps));
                 reordered++;
             }
         }
 
         String cycleAfter = findCycle(biomes, maxSteps);
-        Isleweaver.LOGGER.info(
+        Isleweaver.LOGGER.debug(
                 "[CycleFix] End feature order normalised: {} biome(s) reordered. cycle after={}",
                 reordered, cycleAfter == null ? "none" : cycleAfter);
     }

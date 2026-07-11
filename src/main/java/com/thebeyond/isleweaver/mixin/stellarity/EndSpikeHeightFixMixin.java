@@ -19,7 +19,7 @@ public class EndSpikeHeightFixMixin {
     private int height;
 
     @Inject(method = "getHeight", at = @At("HEAD"), cancellable = true)
-    private void convergence$returnRawHeight(CallbackInfoReturnable<Integer> cir) {
+    private void isleweaver$returnRawHeight(CallbackInfoReturnable<Integer> cir) {
         if (!ModList.get().isLoaded("stellarity")) {
             return;
         }

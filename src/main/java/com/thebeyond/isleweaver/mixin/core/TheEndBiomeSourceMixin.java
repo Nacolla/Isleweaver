@@ -20,7 +20,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public class TheEndBiomeSourceMixin {
 
     @Inject(method = "getNoiseBiome", at = @At("RETURN"), cancellable = true)
-    private void convergence$injectBiomes(int x, int y, int z, Climate.Sampler sampler,
+    private void isleweaver$injectBiomes(int x, int y, int z, Climate.Sampler sampler,
                                           CallbackInfoReturnable<Holder<Biome>> cir) {
         // when Beyond drives terrain itself it handles its own biomes, so stay out of the way
         if (BeyondTerrainState.isActive()) return;

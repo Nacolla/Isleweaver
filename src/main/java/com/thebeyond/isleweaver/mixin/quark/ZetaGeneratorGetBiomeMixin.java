@@ -14,7 +14,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-// in End dims, redirect Zeta's offset=true biome sample from the world top down to the surface — the 3D source reports outer-void up top
+// in End dims, redirect Zeta's offset=true biome sample from the world top down to the surface. The 3D source reports outer-void up top
 @Pseudo
 @Mixin(targets = "org.violetmoon.zeta.world.generator.Generator", remap = false)
 public abstract class ZetaGeneratorGetBiomeMixin {
@@ -25,7 +25,7 @@ public abstract class ZetaGeneratorGetBiomeMixin {
         cancellable = true,
         remap = false
     )
-    private void convergence$sampleAtSurfaceInEnd(
+    private void isleweaver$sampleAtSurfaceInEnd(
             LevelAccessor world, BlockPos pos, boolean offset,
             CallbackInfoReturnable<Holder<Biome>> cir) {
 

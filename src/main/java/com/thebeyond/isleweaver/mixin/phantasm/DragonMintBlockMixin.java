@@ -20,7 +20,7 @@ public abstract class DragonMintBlockMixin {
             ResourceLocation.fromNamespaceAndPath("phantasm", "dragon_mint");
 
     @Inject(method = "randomTick", at = @At("HEAD"), cancellable = true)
-    private void convergence$guardForeignState(
+    private void isleweaver$guardForeignState(
             BlockState state, ServerLevel level, BlockPos pos, RandomSource random,
             CallbackInfo ci) {
         if (!DRAGON_MINT_ID.equals(BuiltInRegistries.BLOCK.getKey(state.getBlock()))) {

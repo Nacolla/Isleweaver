@@ -15,7 +15,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public class EndPodiumFeatureMixin {
 
     @Inject(method = "place", at = @At("HEAD"), cancellable = true)
-    private void convergence$skipVanillaPodiumInStellarityCombo(
+    private void isleweaver$skipVanillaPodiumInStellarityCombo(
             FeaturePlaceContext<NoneFeatureConfiguration> ctx,
             CallbackInfoReturnable<Boolean> cir) {
 
@@ -26,7 +26,7 @@ public class EndPodiumFeatureMixin {
             return;
         }
 
-        // Stellarity owns the portal — without this, BetterEnd would duplicate the bedrock/egg up in the sky
+        // Stellarity owns the portal. Without this, BetterEnd would duplicate the bedrock/egg up in the sky
         cir.setReturnValue(false);
     }
 }

@@ -21,7 +21,7 @@ import net.minecraft.world.level.dimension.LevelStem;
 
 import java.util.*;
 
-// injects Beyond biomes into the End — climate params for MultiNoiseBiomeSource (Enderscape), holders for vanilla TheEndBiomeSource
+// injects Beyond biomes into the End. Climate params for MultiNoiseBiomeSource (Enderscape), holders for vanilla TheEndBiomeSource
 public final class EndBiomeInjector {
 
     private static final String BEYOND_NAMESPACE = "the_beyond";
@@ -72,7 +72,7 @@ public final class EndBiomeInjector {
         } else if (biomeSource instanceof TheEndBiomeSource) {
             setupVanillaEnd(biomeSource, registryAccess);
         } else {
-            Isleweaver.LOGGER.info("[Isleweaver] End biome source is {} (unhandled type), skipping injection",
+            Isleweaver.LOGGER.debug("[Isleweaver] End biome source is {} (unhandled type), skipping injection",
                     biomeSource.getClass().getSimpleName());
         }
     }
@@ -118,7 +118,7 @@ public final class EndBiomeInjector {
                 0
         ));
 
-        // shares a climate slot with enderscape:void_depths — prepend so the tie-break hands the_paths the weirdness>=0 side
+        // shares a climate slot with enderscape:void_depths. Prepend so the tie-break hands the_paths the weirdness>=0 side
         added += tryAddFirst(merged, biomeRegistry, THE_PATHS, Climate.parameters(
                 Climate.Parameter.span(-1.0F, 1.0F),
                 Climate.Parameter.span(-1.0F, 1.0F),
@@ -140,7 +140,7 @@ public final class EndBiomeInjector {
                 .collect(ImmutableSet.toImmutableSet());
         ((BiomeSource) multiNoise).possibleBiomes = Suppliers.memoize(() -> allBiomes);
 
-        Isleweaver.LOGGER.info("[Isleweaver] Injected {} Beyond biomes into End MultiNoiseBiomeSource ({} total)",
+        Isleweaver.LOGGER.debug("[Isleweaver] Injected {} Beyond biomes into End MultiNoiseBiomeSource ({} total)",
                 added, merged.size());
     }
 
@@ -169,7 +169,7 @@ public final class EndBiomeInjector {
         ImmutableSet<Holder<Biome>> finalBiomes = ImmutableSet.copyOf(allBiomes);
         biomeSource.possibleBiomes = Suppliers.memoize(() -> finalBiomes);
 
-        Isleweaver.LOGGER.info("[Isleweaver] Set up vanilla End biome injection (TheEndBiomeSourceMixin active)");
+        Isleweaver.LOGGER.debug("[Isleweaver] Set up vanilla End biome injection (TheEndBiomeSourceMixin active)");
     }
 
     private static int tryAdd(List<Pair<Climate.ParameterPoint, Holder<Biome>>> merged,

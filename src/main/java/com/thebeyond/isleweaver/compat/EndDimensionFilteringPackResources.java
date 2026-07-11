@@ -40,7 +40,6 @@ public class EndDimensionFilteringPackResources implements PackResources {
     @Override
     public void listResources(PackType type, String namespace, String path, ResourceOutput output) {
         if (type == PackType.SERVER_DATA && "minecraft".equals(namespace)) {
-            // drop only the exact hidden ids; the rest of the minecraft namespace still passes through
             delegate.listResources(type, namespace, path, (loc, supplier) -> {
                 if (!HIDDEN.contains(loc)) {
                     output.accept(loc, supplier);

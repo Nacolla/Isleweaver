@@ -19,7 +19,7 @@ public abstract class ModdedBiomeSlicesManagerMixin {
         method = "onServerAboutToStart",
         at = @At(value = "INVOKE", target = "Ljava/util/HashMap;get(Ljava/lang/Object;)Ljava/lang/Object;")
     )
-    private static Object convergence$skipBeyondEndSlices(HashMap<?, ?> assignedSlices, Object location,
+    private static Object isleweaver$skipBeyondEndSlices(HashMap<?, ?> assignedSlices, Object location,
                                                           Operation<Object> original) {
         if (BeyondTerrainState.isActive()
                 && location instanceof ResourceLocation loc

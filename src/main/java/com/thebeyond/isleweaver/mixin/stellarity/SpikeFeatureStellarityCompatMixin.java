@@ -16,7 +16,7 @@ import java.util.List;
 @Mixin(SpikeFeature.class)
 public abstract class SpikeFeatureStellarityCompatMixin {
 
-    private static final List<SpikeFeature.EndSpike> CONVERGENCE$STELLARITY_RING_SPIKES = ImmutableList.of(
+    private static final List<SpikeFeature.EndSpike> ISLEWEAVER$STELLARITY_RING_SPIKES = ImmutableList.of(
             new SpikeFeature.EndSpike( 63,   0, 5, 100, false),
             new SpikeFeature.EndSpike( 50,  36, 4, 105, false),
             new SpikeFeature.EndSpike( 18,  59, 4,  94, false),
@@ -30,7 +30,7 @@ public abstract class SpikeFeatureStellarityCompatMixin {
     );
 
     @Inject(method = "getSpikesForLevel", at = @At("HEAD"), cancellable = true)
-    private static void convergence$substituteStellarityRingSpikes(
+    private static void isleweaver$substituteStellarityRingSpikes(
             WorldGenLevel level, CallbackInfoReturnable<List<SpikeFeature.EndSpike>> cir) {
         if (!ModList.get().isLoaded("stellarity")) {
             return;
@@ -38,6 +38,6 @@ public abstract class SpikeFeatureStellarityCompatMixin {
         if (!BeyondTerrainState.isActive()) {
             return;
         }
-        cir.setReturnValue(CONVERGENCE$STELLARITY_RING_SPIKES);
+        cir.setReturnValue(ISLEWEAVER$STELLARITY_RING_SPIKES);
     }
 }

@@ -18,24 +18,24 @@ import java.util.Optional;
 @Mixin(targets = "com.ordana.dimensional_tears.util.TeleportHelper", remap = false)
 public abstract class TeleportHelperMixin {
 
-    @Unique private static Boolean convergence$bound;
-    @Unique private static Method convergence$fishDataGet;
-    @Unique private static Method convergence$profile;
-    @Unique private static Method convergence$group;
+    @Unique private static Boolean isleweaver$bound;
+    @Unique private static Method isleweaver$fishDataGet;
+    @Unique private static Method isleweaver$profile;
+    @Unique private static Method isleweaver$group;
 
     @Inject(method = "canTeleportTo", at = @At("HEAD"), cancellable = true, remap = false)
-    private static void convergence$exemptTideEndFish(Entity entity, CallbackInfoReturnable<Boolean> cir) {
-        if (convergence$isTideEndFish(entity)) cir.setReturnValue(false);
+    private static void isleweaver$exemptTideEndFish(Entity entity, CallbackInfoReturnable<Boolean> cir) {
+        if (isleweaver$isTideEndFish(entity)) cir.setReturnValue(false);
     }
 
     @Unique
-    private static boolean convergence$isTideEndFish(Entity entity) {
+    private static boolean isleweaver$isTideEndFish(Entity entity) {
         ResourceLocation id = BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType());
-        if (id == null || !"tide".equals(id.getNamespace()) || !convergence$bind()) return false;
+        if (id == null || !"tide".equals(id.getNamespace()) || !isleweaver$bind()) return false;
         try {
-            Object dataOpt = convergence$fishDataGet.invoke(null, entity);
+            Object dataOpt = isleweaver$fishDataGet.invoke(null, entity);
             if (!(dataOpt instanceof Optional<?> opt) || opt.isEmpty()) return false;
-            Object group = convergence$group.invoke(convergence$profile.invoke(opt.get()));
+            Object group = isleweaver$group.invoke(isleweaver$profile.invoke(opt.get()));
             return group instanceof Enum<?> e && "VOID".equals(e.name());
         } catch (Throwable t) {
             return false;
@@ -43,20 +43,20 @@ public abstract class TeleportHelperMixin {
     }
 
     @Unique
-    private static synchronized boolean convergence$bind() {
-        if (convergence$bound != null) return convergence$bound;
+    private static synchronized boolean isleweaver$bind() {
+        if (isleweaver$bound != null) return isleweaver$bound;
         try {
             Class<?> fishData = Class.forName("com.li64.tide.data.fishing.FishData");
-            convergence$fishDataGet = fishData.getMethod("get", Entity.class);
-            convergence$profile = fishData.getMethod("profile");
-            convergence$group = Class.forName("com.li64.tide.data.fishing.ProfileData").getMethod("group");
-            convergence$bound = true;
+            isleweaver$fishDataGet = fishData.getMethod("get", Entity.class);
+            isleweaver$profile = fishData.getMethod("profile");
+            isleweaver$group = Class.forName("com.li64.tide.data.fishing.ProfileData").getMethod("group");
+            isleweaver$bound = true;
         } catch (ClassNotFoundException notPresent) {
-            convergence$bound = false;
+            isleweaver$bound = false;
         } catch (Throwable t) {
             Isleweaver.LOGGER.debug("[Isleweaver] Tide FishData bind failed (non-fatal): {}", t.toString());
-            convergence$bound = false;
+            isleweaver$bound = false;
         }
-        return convergence$bound;
+        return isleweaver$bound;
     }
 }

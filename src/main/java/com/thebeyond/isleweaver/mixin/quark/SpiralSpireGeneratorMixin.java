@@ -18,7 +18,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-// move Quark's spiral spire biome check from Y=256 down to the surface — the 3D biome source reports outer-void at the world top
+// move Quark's spiral spire biome check from Y=256 down to the surface. The 3D biome source reports outer-void at the world top
 @Pseudo
 @Mixin(targets = "org.violetmoon.quark.content.world.gen.SpiralSpireGenerator", remap = false)
 public abstract class SpiralSpireGeneratorMixin {
@@ -26,25 +26,25 @@ public abstract class SpiralSpireGeneratorMixin {
     @Shadow(remap = false)
     public abstract void makeSpike(WorldGenRegion world, ChunkGenerator chunk, Random rand, BlockPos pos);
 
-    private static Field convergence$biomesField;
-    private static Field convergence$radiusField;
-    private static Method convergence$canSpawnMethod;
-    private static boolean convergence$reflectInit;
-    private static boolean convergence$reflectOk;
+    private static Field isleweaver$biomesField;
+    private static Field isleweaver$radiusField;
+    private static Method isleweaver$canSpawnMethod;
+    private static boolean isleweaver$reflectInit;
+    private static boolean isleweaver$reflectOk;
 
-    private static boolean convergence$initReflect() {
-        if (convergence$reflectInit) return convergence$reflectOk;
-        convergence$reflectInit = true;
+    private static boolean isleweaver$initReflect() {
+        if (isleweaver$reflectInit) return isleweaver$reflectOk;
+        isleweaver$reflectInit = true;
         try {
             Class<?> module = Class.forName("org.violetmoon.quark.content.world.module.SpiralSpiresModule");
-            convergence$biomesField = module.getField("biomes");
-            convergence$radiusField = module.getField("radius");
-            convergence$canSpawnMethod = convergence$biomesField.getType().getMethod("canSpawn", Holder.class);
-            convergence$reflectOk = true;
+            isleweaver$biomesField = module.getField("biomes");
+            isleweaver$radiusField = module.getField("radius");
+            isleweaver$canSpawnMethod = isleweaver$biomesField.getType().getMethod("canSpawn", Holder.class);
+            isleweaver$reflectOk = true;
         } catch (Throwable t) {
-            convergence$reflectOk = false;
+            isleweaver$reflectOk = false;
         }
-        return convergence$reflectOk;
+        return isleweaver$reflectOk;
     }
 
     // sample the biome only after walking down to END_STONE so the 3D source sees real surface; RNG order matches Quark's
@@ -54,19 +54,19 @@ public abstract class SpiralSpireGeneratorMixin {
         cancellable = true,
         remap = false
     )
-    private void convergence$sampleBiomeAtLandingY(
+    private void isleweaver$sampleBiomeAtLandingY(
             BlockPos src, ChunkGenerator generator, Random random,
             BlockPos chunkCorner, WorldGenRegion world, CallbackInfo ci) {
 
-        if (!convergence$initReflect()) return; // can't reach Quark's fields — let the original run
+        if (!isleweaver$initReflect()) return; // can't reach Quark's fields, so let the original run
 
         int radius;
         Object biomesConfig;
         try {
-            radius = convergence$radiusField.getInt(null);
-            biomesConfig = convergence$biomesField.get(null);
+            radius = isleweaver$radiusField.getInt(null);
+            biomesConfig = isleweaver$biomesField.get(null);
         } catch (Throwable t) {
-            return; // let Quark's original run
+            return;
         }
 
         // mirror Quark's distance guard verbatim to consume the same RNG
@@ -90,7 +90,7 @@ public abstract class SpiralSpireGeneratorMixin {
         Holder<Biome> biome = world.getBiomeManager().getBiome(pos);
         boolean ok;
         try {
-            ok = (Boolean) convergence$canSpawnMethod.invoke(biomesConfig, biome);
+            ok = (Boolean) isleweaver$canSpawnMethod.invoke(biomesConfig, biome);
         } catch (Throwable t) {
             ok = false;
         }
@@ -100,6 +100,6 @@ public abstract class SpiralSpireGeneratorMixin {
         }
 
         makeSpike(world, generator, random, pos);
-        ci.cancel(); // we fully handled the method
+        ci.cancel();
     }
 }

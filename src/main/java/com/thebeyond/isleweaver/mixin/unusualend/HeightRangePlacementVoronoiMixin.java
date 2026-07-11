@@ -26,12 +26,11 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
-// for Voronoi-floating features, pick Y from the reef cell bands instead of uniformly over the full range,
-// which would miss the reef cells almost all the time
+// for Voronoi-floating features, pick Y from the reef cell bands, not uniformly over the range (which would miss the reef cells almost always)
 @Mixin(HeightRangePlacement.class)
 public abstract class HeightRangePlacementVoronoiMixin {
 
-    private static final Set<ResourceLocation> convergence$VORONOI_FLOATING_FEATURES = Set.of(
+    private static final Set<ResourceLocation> isleweaver$VORONOI_FLOATING_FEATURES = Set.of(
             ResourceLocation.fromNamespaceAndPath("unusualend", "warped_isles"),
             ResourceLocation.fromNamespaceAndPath("unusualend", "warped_citrine_isles"),
             ResourceLocation.fromNamespaceAndPath("unusualend", "warped_rock_1_feature"),
@@ -39,13 +38,13 @@ public abstract class HeightRangePlacementVoronoiMixin {
             ResourceLocation.fromNamespaceAndPath("unusualend", "warped_vegetation")
     );
 
-    private static final int convergence$SCAN_STEP = 10;
+    private static final int isleweaver$SCAN_STEP = 10;
 
-    private static final ThreadLocal<ChunkColumnReefCache> convergence$CACHE =
+    private static final ThreadLocal<ChunkColumnReefCache> isleweaver$CACHE =
             ThreadLocal.withInitial(ChunkColumnReefCache::new);
 
     @Inject(method = "getPositions", at = @At("HEAD"), cancellable = true)
-    private void convergence$voronoiCellAwareY(
+    private void isleweaver$voronoiCellAwareY(
             PlacementContext ctx, RandomSource random, BlockPos pos,
             CallbackInfoReturnable<Stream<BlockPos>> cir) {
         if (!BeyondTerrainState.isActive()) return;
@@ -55,9 +54,9 @@ public abstract class HeightRangePlacementVoronoiMixin {
         ResourceLocation featureId = ctx.getLevel().registryAccess()
                 .registryOrThrow(Registries.PLACED_FEATURE)
                 .getKey(top.get());
-        if (featureId == null || !convergence$VORONOI_FLOATING_FEATURES.contains(featureId)) return;
+        if (featureId == null || !isleweaver$VORONOI_FLOATING_FEATURES.contains(featureId)) return;
 
-        BeyondEndBiomeSourceApi bebs = convergence$lookupBiomeSource(ctx.getLevel());
+        BeyondEndBiomeSourceApi bebs = isleweaver$lookupBiomeSource(ctx.getLevel());
         if (bebs == null) return;
 
         int x = pos.getX();
@@ -65,33 +64,33 @@ public abstract class HeightRangePlacementVoronoiMixin {
         int minY = ctx.getMinBuildHeight();
         int maxY = ctx.getLevel().getMaxBuildHeight() - 1;
 
-        IntList reefYs = convergence$scanReefBands(bebs, top.get(), x, z, minY, maxY);
+        IntList reefYs = isleweaver$scanReefBands(bebs, top.get(), x, z, minY, maxY);
         if (reefYs.isEmpty()) {
             cir.setReturnValue(Stream.empty());
             return;
         }
 
         int bandY = reefYs.getInt(random.nextInt(reefYs.size()));
-        int y = Math.min(maxY, bandY + random.nextInt(convergence$SCAN_STEP));
+        int y = Math.min(maxY, bandY + random.nextInt(isleweaver$SCAN_STEP));
         cir.setReturnValue(Stream.of(new BlockPos(x, y, z)));
     }
 
-    private static BeyondEndBiomeSourceApi convergence$lookupBiomeSource(WorldGenLevel level) {
+    private static BeyondEndBiomeSourceApi isleweaver$lookupBiomeSource(WorldGenLevel level) {
         ServerLevel sl = level.getLevel();
         BiomeSource source = sl.getChunkSource().getGenerator().getBiomeSource();
         return source instanceof BeyondEndBiomeSourceApi bebs ? bebs : null;
     }
 
-    private static IntList convergence$scanReefBands(
+    private static IntList isleweaver$scanReefBands(
             BeyondEndBiomeSourceApi bebs, PlacedFeature feature, int x, int z, int minY, int maxY) {
         long chunkKey = ((long) (x >> 4) << 32) | ((z >> 4) & 0xFFFFFFFFL);
         long colKey = ((long) x << 32) | (z & 0xFFFFFFFFL);
-        ChunkColumnReefCache cache = convergence$CACHE.get();
+        ChunkColumnReefCache cache = isleweaver$CACHE.get();
         IntList cached = cache.get(chunkKey, colKey);
         if (cached != null) return cached;
 
         IntList reefYs = new IntArrayList();
-        for (int y = minY; y <= maxY; y += convergence$SCAN_STEP) {
+        for (int y = minY; y <= maxY; y += isleweaver$SCAN_STEP) {
             Holder<Biome> biome = bebs.voronoiCellBiomeIgnoringDensity(x, y, z);
             if (biome.value().getGenerationSettings().hasFeature(feature)) {
                 reefYs.add(y);

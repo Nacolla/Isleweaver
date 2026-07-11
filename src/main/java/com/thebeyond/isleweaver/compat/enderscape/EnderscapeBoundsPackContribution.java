@@ -7,10 +7,10 @@ import net.minecraft.server.packs.repository.Pack;
 
 // extends End y-bounds to -64..320 for Enderscape; priority 50 deliberately loses to Astrological's 100
 public final class EnderscapeBoundsPackContribution {
-    private static final String PACK_NAME = "convergence_enderscape_bounds";
+    private static final String PACK_NAME = "isleweaver_enderscape_bounds";
     private static final int PRIORITY = 50;
     private static final String LOG_MESSAGE =
-            "Enderscape detected — attaching convergence_enderscape_bounds (extends End y-bounds to -64..320).";
+            "Enderscape detected, attaching isleweaver_enderscape_bounds (extends End y-bounds to -64..320).";
 
     private EnderscapeBoundsPackContribution() {}
 

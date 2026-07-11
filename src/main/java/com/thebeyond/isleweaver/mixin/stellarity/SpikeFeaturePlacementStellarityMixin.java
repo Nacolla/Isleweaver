@@ -20,13 +20,12 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 import java.util.HashMap;
 import java.util.Map;
 
-// places Stellarity's ring spikes with vanilla absolute-Y semantics; heights come from a static table
-// because BetterEnd intercepts getHeight() and would otherwise remap them
+// places Stellarity's ring spikes with vanilla absolute-Y semantics from a static table, since BetterEnd's getHeight() would otherwise remap them
 @Mixin(SpikeFeature.class)
 public abstract class SpikeFeaturePlacementStellarityMixin {
 
     // raw heights from Stellarity's ring.json keyed by BlockPos.asLong(x, 0, z), so we sidestep BetterEnd's getHeight() mixin
-    private static final Map<Long, Integer> CONVERGENCE$RAW_HEIGHTS = new HashMap<>();
+    private static final Map<Long, Integer> ISLEWEAVER$RAW_HEIGHTS = new HashMap<>();
 
     static {
         int[][] data = {
@@ -35,12 +34,12 @@ public abstract class SpikeFeaturePlacementStellarityMixin {
                 { 18, -60,  87}, { 50, -39,  95}
         };
         for (int[] d : data) {
-            CONVERGENCE$RAW_HEIGHTS.put(BlockPos.asLong(d[0], 0, d[1]), d[2]);
+            ISLEWEAVER$RAW_HEIGHTS.put(BlockPos.asLong(d[0], 0, d[1]), d[2]);
         }
     }
 
-    private static int convergence$getRawHeight(SpikeFeature.EndSpike spike) {
-        Integer raw = CONVERGENCE$RAW_HEIGHTS.get(
+    private static int isleweaver$getRawHeight(SpikeFeature.EndSpike spike) {
+        Integer raw = ISLEWEAVER$RAW_HEIGHTS.get(
                 BlockPos.asLong(spike.getCenterX(), 0, spike.getCenterZ()));
         return raw != null ? raw : spike.getHeight();
     }
@@ -52,7 +51,7 @@ public abstract class SpikeFeaturePlacementStellarityMixin {
     @Redirect(method = "place",
               at = @At(value = "INVOKE",
                        target = "Lnet/minecraft/world/level/levelgen/feature/SpikeFeature;placeSpike(Lnet/minecraft/world/level/ServerLevelAccessor;Lnet/minecraft/util/RandomSource;Lnet/minecraft/world/level/levelgen/feature/configurations/SpikeConfiguration;Lnet/minecraft/world/level/levelgen/feature/SpikeFeature$EndSpike;)V"))
-    private void convergence$redirectPlaceSpike(
+    private void isleweaver$redirectPlaceSpike(
             SpikeFeature instance,
             ServerLevelAccessor level,
             RandomSource random,
@@ -73,16 +72,16 @@ public abstract class SpikeFeaturePlacementStellarityMixin {
             return;
         }
 
-        int rawHeight = convergence$getRawHeight(spike);
+        int rawHeight = isleweaver$getRawHeight(spike);
         Isleweaver.LOGGER.debug(
                 "[Isleweaver] Stellarity compat: placing spike at ({}, {}) with vanilla absolute-Y semantics (rawHeight={}, interceptedHeight={}, radius={}, crystal will be at y={})",
                 spike.getCenterX(), spike.getCenterZ(), rawHeight, spike.getHeight(), spike.getRadius(), rawHeight + 1);
 
-        convergence$vanillaPlaceSpike(level, random, config, spike);
+        isleweaver$vanillaPlaceSpike(level, random, config, spike);
     }
 
-    // vanilla SpikeFeature.placeSpike reimplemented to build from raw heights instead of the intercepted ones
-    private void convergence$vanillaPlaceSpike(
+    // reimplements placeSpike from raw heights instead of the intercepted ones
+    private void isleweaver$vanillaPlaceSpike(
             ServerLevelAccessor level,
             RandomSource random,
             SpikeConfiguration config,
@@ -90,7 +89,7 @@ public abstract class SpikeFeaturePlacementStellarityMixin {
         int radius = spike.getRadius();
         int centerX = spike.getCenterX();
         int centerZ = spike.getCenterZ();
-        int height = convergence$getRawHeight(spike);
+        int height = isleweaver$getRawHeight(spike);
 
         for (BlockPos blockpos : BlockPos.betweenClosed(
                 new BlockPos(centerX - radius, level.getMinBuildHeight(), centerZ - radius),

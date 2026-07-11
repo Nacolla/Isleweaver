@@ -23,9 +23,8 @@ import java.util.Set;
 
 @Mixin(BiomeFilter.class)
 public abstract class BiomeFilterMixin {
-    // these resolve their biome from the 3D Voronoi cell instead of the air->void mapping;
-    // otherwise they sample air and never match their target biome
-    private static final Set<ResourceLocation> convergence$VORONOI_FLOATING_FEATURES = Set.of(
+    // these resolve their biome from the 3D Voronoi cell, not the air->void mapping, else they'd sample air and never match their target biome
+    private static final Set<ResourceLocation> isleweaver$VORONOI_FLOATING_FEATURES = Set.of(
             ResourceLocation.fromNamespaceAndPath("unusualend", "warped_isles"),
             ResourceLocation.fromNamespaceAndPath("unusualend", "warped_citrine_isles"),
             ResourceLocation.fromNamespaceAndPath("unusualend", "warped_bubbles_feature"),
@@ -33,15 +32,15 @@ public abstract class BiomeFilterMixin {
     );
 
     @Inject(method = "shouldPlace", at = @At("HEAD"), cancellable = true)
-    private void convergence$resolveBiome(
+    private void isleweaver$resolveBiome(
             PlacementContext ctx, RandomSource random, BlockPos pos,
             CallbackInfoReturnable<Boolean> cir) {
         if (!BeyondTerrainState.isActive()) return;
         if (!ctx.getLevel().getBlockState(pos).isAir()) return;
 
         Holder<Biome> biome;
-        if (convergence$isVoronoiFloatingFeature(ctx)) {
-            biome = convergence$lookupVoronoiBiome(ctx.getLevel(), pos);
+        if (isleweaver$isVoronoiFloatingFeature(ctx)) {
+            biome = isleweaver$lookupVoronoiBiome(ctx.getLevel(), pos);
             if (biome == null) return;
         } else {
             BlockPos.MutableBlockPos probe = new BlockPos.MutableBlockPos(pos.getX(), 0, pos.getZ());
@@ -64,16 +63,16 @@ public abstract class BiomeFilterMixin {
         cir.setReturnValue(result);
     }
 
-    private static boolean convergence$isVoronoiFloatingFeature(PlacementContext ctx) {
+    private static boolean isleweaver$isVoronoiFloatingFeature(PlacementContext ctx) {
         Optional<PlacedFeature> top = ctx.topFeature();
         if (top.isEmpty()) return false;
         ResourceLocation id = ctx.getLevel().registryAccess()
             .registryOrThrow(Registries.PLACED_FEATURE)
             .getKey(top.get());
-        return id != null && convergence$VORONOI_FLOATING_FEATURES.contains(id);
+        return id != null && isleweaver$VORONOI_FLOATING_FEATURES.contains(id);
     }
 
-    private static Holder<Biome> convergence$lookupVoronoiBiome(WorldGenLevel level, BlockPos pos) {
+    private static Holder<Biome> isleweaver$lookupVoronoiBiome(WorldGenLevel level, BlockPos pos) {
         BiomeSource source = level.getLevel().getChunkSource().getGenerator().getBiomeSource();
         if (!(source instanceof BeyondEndBiomeSourceApi bebs)) return null;
         return bebs.voronoiCellBiomeIgnoringDensity(pos.getX(), pos.getY(), pos.getZ());

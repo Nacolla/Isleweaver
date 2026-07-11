@@ -26,7 +26,6 @@ public final class AstrologicalMixinDisabler implements IMixinConfigPlugin {
 
     @Override
     public void onLoad(String mixinPackage) {
-        LOGGER.info("[Isleweaver] AstrologicalMixinDisabler onLoad fired (pkg={})", mixinPackage);
         tryDisable("onLoad");
     }
 
@@ -42,7 +41,6 @@ public final class AstrologicalMixinDisabler implements IMixinConfigPlugin {
 
     @Override
     public void acceptTargets(Set<String> myTargets, Set<String> otherTargets) {
-        LOGGER.info("[Isleweaver] acceptTargets fired");
         tryDisable("acceptTargets");
     }
 
@@ -71,10 +69,8 @@ public final class AstrologicalMixinDisabler implements IMixinConfigPlugin {
                     LOGGER.warn("[Isleweaver] unwrapConfig returned null for {}", name);
                     continue;
                 }
-                LOGGER.info("[Isleweaver] Targeting astrological config (hook={}, configClass={})",
-                    hook, mixinConfig.getClass().getName());
                 int removed = stripHostile(mixinConfig);
-                LOGGER.info("[Isleweaver] Astrological strip result: {} entries removed (hook={})", removed, hook);
+                LOGGER.debug("[Isleweaver] Astrological strip result: {} entries removed (hook={})", removed, hook);
             }
         } catch (Throwable t) {
             LOGGER.warn("[Isleweaver] tryDisable failed (hook={})", hook, t);
@@ -115,20 +111,16 @@ public final class AstrologicalMixinDisabler implements IMixinConfigPlugin {
     private static int removeStrings(Object cfg, String fieldName) {
         Field f = findField(cfg.getClass(), fieldName);
         if (f == null) {
-            LOGGER.info("[Isleweaver] field {} not found", fieldName);
             return 0;
         }
         try {
             Object value = f.get(cfg);
             if (value == null) {
-                LOGGER.info("[Isleweaver] field {} is null", fieldName);
                 return 0;
             }
             if (!(value instanceof List<?> list)) {
-                LOGGER.info("[Isleweaver] field {} is not a List ({})", fieldName, value.getClass().getName());
                 return 0;
             }
-            LOGGER.info("[Isleweaver] field {} size={} ({})", fieldName, list.size(), list);
             List<String> kept = new ArrayList<>(list.size());
             int removed = 0;
             for (Object item : list) {
@@ -137,7 +129,6 @@ public final class AstrologicalMixinDisabler implements IMixinConfigPlugin {
                     continue;
                 }
                 if (isHostile(s)) {
-                    LOGGER.info("[Isleweaver] removing {} from {}", s, fieldName);
                     removed++;
                 } else {
                     kept.add(s);
@@ -163,7 +154,6 @@ public final class AstrologicalMixinDisabler implements IMixinConfigPlugin {
             int removed = 0;
             for (Object item : list) {
                 if (item instanceof IMixinInfo info && isHostile(info.getClassName())) {
-                    LOGGER.info("[Isleweaver] removing MixinInfo {} from {}", info.getClassName(), fieldName);
                     removed++;
                 } else {
                     kept.add(item);

@@ -7,10 +7,10 @@ import net.minecraft.server.packs.repository.Pack;
 
 // Astrological y-bounds override (-256..384); priority 100 beats Enderscape's 50
 public final class AstrologicalBoundsPackContribution {
-    private static final String PACK_NAME = "convergence_astrological_bounds";
+    private static final String PACK_NAME = "isleweaver_astrological_bounds";
     private static final int PRIORITY = 100;
     private static final String LOG_MESSAGE =
-            "Astrological detected — attaching convergence_astrological_bounds (extends End y-bounds to -256..384).";
+            "Astrological detected, attaching isleweaver_astrological_bounds (extends End y-bounds to -256..384).";
 
     private AstrologicalBoundsPackContribution() {}
 

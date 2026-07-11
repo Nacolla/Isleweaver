@@ -23,7 +23,7 @@ public final class BoundsPackBuilder {
                 .getFile().findResource("resourcepacks/" + packName);
         boolean pathExists = path != null && Files.exists(path);
         boolean mcmetaExists = path != null && Files.exists(path.resolve("pack.mcmeta"));
-        Isleweaver.LOGGER.info(
+        Isleweaver.LOGGER.debug(
                 "[Isleweaver] BoundsPackBuilder: packName={} resolvedPath={} dirExists={} mcmetaExists={}",
                 packName, path, pathExists, mcmetaExists);
 
@@ -32,10 +32,10 @@ public final class BoundsPackBuilder {
                 Component.literal(displayName),
                 PackSource.DEFAULT, Optional.empty());
         Pack.ResourcesSupplier supplier = new PathPackResources.PathResourcesSupplier(path);
-        // position/required don't matter for child packs — NeoForge forces them right after the parent anyway
+        // position/required don't matter for child packs. NeoForge forces them right after the parent anyway
         PackSelectionConfig selection = new PackSelectionConfig(false, Pack.Position.TOP, false);
         Pack result = Pack.readMetaAndCreate(info, supplier, PackType.SERVER_DATA, selection);
-        Isleweaver.LOGGER.info(
+        Isleweaver.LOGGER.debug(
                 "[Isleweaver] BoundsPackBuilder: Pack.readMetaAndCreate({}) -> {}",
                 packName, result == null ? "NULL (pack.mcmeta missing or invalid)" : "OK");
         if (result != null) {

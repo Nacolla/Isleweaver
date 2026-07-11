@@ -37,8 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-// merges Beyond's surface rules into the End's active noise settings; widens plate
-// thresholds when foreign terrain (Enderscape) owns the dimension
+// merges Beyond's surface rules into the End's active noise settings; widens plate thresholds when foreign terrain (Enderscape) owns the dimension
 public final class SurfaceRuleMerger {
 
     private static final String BEYOND_NAMESPACE = "the_beyond";
@@ -47,9 +46,11 @@ public final class SurfaceRuleMerger {
             ResourceKey.create(Registries.NOISE_SETTINGS,
                     ResourceLocation.fromNamespaceAndPath(BEYOND_NAMESPACE, "the_end"));
 
+    // null unless Beyond owns the End; re-asserted by EndSurfaceRuleReassertMixin to undo foreign End rules a mod prepends later at createLevels TAIL
+    public static volatile SurfaceRules.RuleSource beyondOwnedEndRule;
+
     private SurfaceRuleMerger() {}
 
-    // when beyondActive, also scans foreign settings so mod biomes keep their surface under Beyond's chunkgen
     public static void mergeSurfaceRules(MinecraftServer server, boolean beyondActive) {
         RegistryAccess registryAccess = server.registryAccess();
 
@@ -62,7 +63,7 @@ public final class SurfaceRuleMerger {
 
         ChunkGenerator chunkGenerator = endStem.generator();
         if (!(chunkGenerator instanceof NoiseBasedChunkGenerator noiseGen)) {
-            Isleweaver.LOGGER.info("[Isleweaver] End generator is not NoiseBasedChunkGenerator, skipping surface rule merge");
+            Isleweaver.LOGGER.debug("[Isleweaver] End generator is not NoiseBasedChunkGenerator, skipping surface rule merge");
             return;
         }
 
@@ -73,7 +74,7 @@ public final class SurfaceRuleMerger {
         SurfaceRules.RuleSource beyondRule;
         if (externalTerrain) {
             beyondRule = buildExternalTerrainRules();
-            Isleweaver.LOGGER.info("[Isleweaver] Using wider surface rule thresholds for external terrain (Enderscape)");
+            Isleweaver.LOGGER.debug("[Isleweaver] Using wider surface rule thresholds for external terrain (Enderscape)");
         } else {
             Registry<NoiseGeneratorSettings> noiseRegistry = registryAccess.registryOrThrow(Registries.NOISE_SETTINGS);
             NoiseGeneratorSettings beyondEnd = noiseRegistry.get(BEYOND_END_SETTINGS);
@@ -81,8 +82,8 @@ public final class SurfaceRuleMerger {
                 Isleweaver.LOGGER.warn("[Isleweaver] Beyond End noise settings not found, skipping surface rule merge");
                 return;
             }
-            beyondRule = ((NoiseGeneratorSettingsAccessor) (Object) beyondEnd).convergence$getSurfaceRule();
-            Isleweaver.LOGGER.info("[Isleweaver] Using default surface rule thresholds for Beyond/vanilla terrain");
+            beyondRule = ((NoiseGeneratorSettingsAccessor) (Object) beyondEnd).isleweaver$getSurfaceRule();
+            Isleweaver.LOGGER.debug("[Isleweaver] Using default surface rule thresholds for Beyond/vanilla terrain");
         }
 
         // order matters: beyond -> addon -> foreign -> active (active carries in-place mod injections); terminators sink last
@@ -94,22 +95,29 @@ public final class SurfaceRuleMerger {
                     new BeyondSurfaceRuleContributionEvent(server, registryAccess, endBiomeSource);
             NeoForge.EVENT_BUS.post(contribEvent);
             allRules.addAll(contribEvent.getContributions());
-            // biome-guarded BoP rules before the foreign scan so e.g. end_wilds->algal wins over any catch-all end_stone
-            allRules.addAll(collectTerraBlenderEndRules());
-            allRules.addAll(collectForeignNoiseSettingsRules(server, registryAccess));
+            // gate each scraped foreign rule to its positive-biome clauses so no foreign global paints Beyond's fall-through islands. TerraBlender stays before the foreign scan
+            for (SurfaceRules.RuleSource tb : collectTerraBlenderEndRules()) {
+                allRules.addAll(SurfaceRuleOrdering.biomeGuardedClausesOf(tb, registryAccess));
+            }
+            for (SurfaceRules.RuleSource foreign : collectForeignNoiseSettingsRules(server, registryAccess)) {
+                allRules.addAll(SurfaceRuleOrdering.biomeGuardedClausesOf(foreign, registryAccess));
+            }
         }
 
         SurfaceRules.RuleSource activePre = activeSettings.surfaceRule();
         allRules.add(activePre);
 
-        SurfaceRules.RuleSource mergedRule = SurfaceRuleOrdering.bubbleTerminatorsLast(
-                SurfaceRules.sequence(allRules.toArray(new SurfaceRules.RuleSource[0])));
+        SurfaceRules.RuleSource sequenced =
+                SurfaceRules.sequence(allRules.toArray(new SurfaceRules.RuleSource[0]));
+        // true: merged rule is NOT biome-wrapped, so only biome-confined clauses may promote ahead of a foreign filler (an unguarded conditional would re-skin Beyond's fall-through islands)
+        SurfaceRules.RuleSource mergedRule = SurfaceRuleOrdering.bubbleTerminatorsLast(sequenced, true);
 
-        ((NoiseGeneratorSettingsAccessor) (Object) activeSettings).convergence$setSurfaceRule(mergedRule);
-        Isleweaver.LOGGER.info("[Isleweaver] Merged surface rules into End generator settings");
+        ((NoiseGeneratorSettingsAccessor) (Object) activeSettings).isleweaver$setSurfaceRule(mergedRule);
+        beyondOwnedEndRule = beyondActive ? mergedRule : null;
+        Isleweaver.LOGGER.debug("[Isleweaver] Merged surface rules into End generator settings (terminator reorder: {})",
+                mergedRule == sequenced ? "no change" : "fillers sunk after biome-guarded clauses");
     }
 
-    // soup-mode overload: beyondActive=false
     public static void mergeSurfaceRules(MinecraftServer server) {
         mergeSurfaceRules(server, false);
     }
@@ -117,7 +125,6 @@ public final class SurfaceRuleMerger {
     private static final ResourceLocation END_NOISE_SETTINGS_FILE =
             ResourceLocation.withDefaultNamespace("worldgen/noise_settings/end.json");
 
-    // whole-settings rules from minecraft:end and non-Beyond namespaces whose path contains "end";
     // these may contain terminators, so the caller orders them last
     private static List<SurfaceRules.RuleSource> collectForeignNoiseSettingsRules(
             MinecraftServer server, RegistryAccess registryAccess) {
@@ -125,16 +132,15 @@ public final class SurfaceRuleMerger {
         List<SurfaceRules.RuleSource> foreignRules = new ArrayList<>();
         Set<String> seen = new HashSet<>();
 
-        // datapack overrides (e.g. Stellarity) inject rules into minecraft:end
         ResourceKey<NoiseGeneratorSettings> vanillaEnd = ResourceKey.create(Registries.NOISE_SETTINGS,
                 ResourceLocation.withDefaultNamespace("end"));
         NoiseGeneratorSettings vanillaEndSettings = noiseRegistry.get(vanillaEnd);
         if (vanillaEndSettings != null) {
             SurfaceRules.RuleSource rule = ((NoiseGeneratorSettingsAccessor) (Object) vanillaEndSettings)
-                    .convergence$getSurfaceRule();
+                    .isleweaver$getSurfaceRule();
             if (rule != null && seen.add(rule.toString())) {
                 foreignRules.add(rule);
-                Isleweaver.LOGGER.info("[Isleweaver] Extracted surface rules from minecraft:end noise settings (may contain foreign mod overrides)");
+                Isleweaver.LOGGER.debug("[Isleweaver] Extracted surface rules from minecraft:end noise settings (may contain foreign mod overrides)");
             }
         }
 
@@ -143,7 +149,6 @@ public final class SurfaceRuleMerger {
             foreignRules.add(rule);
         }
 
-        // heuristic scan: foreign-namespace noise settings whose path contains "end"
         for (Map.Entry<ResourceKey<NoiseGeneratorSettings>, NoiseGeneratorSettings> entry :
                 noiseRegistry.entrySet()) {
             ResourceKey<NoiseGeneratorSettings> key = entry.getKey();
@@ -154,18 +159,17 @@ public final class SurfaceRuleMerger {
             if (!path.contains("end")) continue;
 
             SurfaceRules.RuleSource rule = ((NoiseGeneratorSettingsAccessor) (Object) entry.getValue())
-                    .convergence$getSurfaceRule();
+                    .isleweaver$getSurfaceRule();
             if (rule != null) {
                 foreignRules.add(rule);
-                Isleweaver.LOGGER.info("[Isleweaver] Extracted surface rules from {} noise settings", key.location());
+                Isleweaver.LOGGER.debug("[Isleweaver] Extracted surface rules from {} noise settings", key.location());
             }
         }
 
         return foreignRules;
     }
 
-    // pulls TerraBlender's biome-guarded END surface rules out of its private map; reached by
-    // reflection so TerraBlender stays optional — bail quietly if it isn't loaded
+    // reflection so TerraBlender stays optional. Bail quietly if it isn't loaded
     private static List<SurfaceRules.RuleSource> collectTerraBlenderEndRules() {
         try {
             Class<?> manager = Class.forName("terrablender.api.SurfaceRuleManager");
@@ -187,7 +191,7 @@ public final class SurfaceRuleMerger {
                 }
             }
             if (!out.isEmpty()) {
-                Isleweaver.LOGGER.info(
+                Isleweaver.LOGGER.debug(
                         "[Isleweaver] Captured {} TerraBlender END surface rule(s) from namespaces {}",
                         out.size(), namespaces);
             }
@@ -200,7 +204,6 @@ public final class SurfaceRuleMerger {
         }
     }
 
-    // decodes surface_rule from every pack's end.json (deduped) — recovers rules a losing pack dropped from the registry
     private static List<SurfaceRules.RuleSource> decodeStackedEndSurfaceRules(
             MinecraftServer server, RegistryAccess registryAccess, Set<String> seen) {
         List<SurfaceRules.RuleSource> out = new ArrayList<>();
@@ -223,7 +226,7 @@ public final class SurfaceRuleMerger {
                 if (rule == null || !seen.add(rule.toString())) continue;
                 out.add(rule);
                 String rs = rule.toString();
-                Isleweaver.LOGGER.info(
+                Isleweaver.LOGGER.debug(
                         "[Isleweaver] Captured minecraft:end surface_rule from pack '{}' "
                                 + "(len={} hasStellarity={} hasPhantasm={})",
                         res.sourcePackId(), rs.length(),
@@ -236,7 +239,6 @@ public final class SurfaceRuleMerger {
         return out;
     }
 
-    // attracta_expanse rules with widened plate thresholds for Enderscape terrain
     private static SurfaceRules.RuleSource buildExternalTerrainRules() {
         BlockState plateBlock = BeyondBlockRegistry.get("plate_block").defaultBlockState();
         BlockState platedEndStone = BeyondBlockRegistry.get("plated_end_stone").defaultBlockState();

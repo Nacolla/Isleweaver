@@ -40,7 +40,7 @@ public final class BopBiomeConfigFilter {
             managedKeys = keys;
             available = true;
         } catch (ClassNotFoundException notPresent) {
-            available = false; // BoP isn't installed, stay optional
+            available = false;
         } catch (Throwable t) {
             Isleweaver.LOGGER.debug("[Isleweaver] BoP biome-config bind failed (non-fatal): {}", t.toString());
             available = false;
@@ -64,7 +64,7 @@ public final class BopBiomeConfigFilter {
 
         remove.forEach(candidates::remove);
         if (!remove.isEmpty()) {
-            Isleweaver.LOGGER.info("[Isleweaver] Excluded {} BoP-config-disabled End biome(s): {}",
+            Isleweaver.LOGGER.debug("[Isleweaver] Excluded {} BoP-config-disabled End biome(s): {}",
                     remove.size(),
                     remove.stream().map(k -> k.location().toString()).sorted().toList());
         }

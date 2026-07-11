@@ -22,7 +22,7 @@ import net.neoforged.neoforge.common.NeoForge;
 
 import java.util.*;
 
-// finds End biomes by their is_end tags and feeds them into Beyond's tainted pool — tag-driven, no hardcoded mod list
+// finds End biomes by their is_end tags and feeds them into Beyond's tainted pool. Tag-driven, no hardcoded mod list
 public final class EndBiomeDiscovery {
 
     private static final String BEYOND_NAMESPACE = "the_beyond";
@@ -69,7 +69,7 @@ public final class EndBiomeDiscovery {
         BopBiomeConfigFilter.filterDisabled(candidates);
 
         if (candidates.isEmpty()) {
-            Isleweaver.LOGGER.info("[Isleweaver] No End biomes found via tags — nothing to auto-discover");
+            Isleweaver.LOGGER.debug("[Isleweaver] No End biomes found via tags, nothing to auto-discover");
             return;
         }
 
@@ -77,15 +77,20 @@ public final class EndBiomeDiscovery {
 
         Set<String> namespaces = foreignNamespaces(candidates.values());
         if (injected > 0) {
-            Isleweaver.LOGGER.info("[Isleweaver] Auto-discovered {} End biome(s) from tags and injected into tainted pool. " +
+            Isleweaver.LOGGER.debug("[Isleweaver] Auto-discovered {} End biome(s) from tags and injected into tainted pool. " +
                     "Contributing mod namespaces: {}", injected, namespaces);
         } else {
-            Isleweaver.LOGGER.info("[Isleweaver] All tagged End biomes already present in biome pools — nothing new to inject. " +
+            Isleweaver.LOGGER.debug("[Isleweaver] All tagged End biomes already present in biome pools, nothing new to inject. " +
                     "Contributing mod namespaces: {}", namespaces);
+        }
+
+        if (Isleweaver.LOGGER.isDebugEnabled()) {
+            List<String> ids = candidates.keySet().stream()
+                    .map(k -> k.location().toString()).sorted().toList();
+            Isleweaver.LOGGER.debug("[Isleweaver] End discovery placed {} biome(s) into the pool: {}", ids.size(), ids);
         }
     }
 
-    // foreign namespaces only; skip vanilla and Beyond itself
     public static Set<String> foreignNamespaces(Iterable<Holder<Biome>> holders) {
         Set<String> out = new TreeSet<>();
         for (Holder<Biome> h : holders) {

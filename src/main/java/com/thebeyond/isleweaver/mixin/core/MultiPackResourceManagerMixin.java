@@ -32,9 +32,9 @@ public class MultiPackResourceManagerMixin {
             argsOnly = true,
             ordinal = 0
     )
-    private static List<PackResources> convergence$filterEndDimensionOverrides(List<PackResources> packs) {
+    private static List<PackResources> isleweaver$filterEndDimensionOverrides(List<PackResources> packs) {
         if (packs == null || packs.isEmpty()) {
-            Isleweaver.LOGGER.info("[MultiPackFilter] construction with {} pack(s) — bailing early (null or empty).",
+            Isleweaver.LOGGER.debug("[MultiPackFilter] construction with {} pack(s), bailing early (null or empty).",
                     packs == null ? "null" : "0");
             return packs;
         }
@@ -43,7 +43,7 @@ public class MultiPackResourceManagerMixin {
         for (PackResources pr : packs) {
             allIds.add(pr.packId());
         }
-        Isleweaver.LOGGER.info("[MultiPackFilter] construction with {} pack(s): {}", packs.size(), allIds);
+        Isleweaver.LOGGER.debug("[MultiPackFilter] construction with {} pack(s): {}", packs.size(), allIds);
 
         // the bounds sidecar is a child of beyond_terrain, so checking for the parent is enough
         boolean beyondPresent = false;
@@ -54,7 +54,7 @@ public class MultiPackResourceManagerMixin {
             }
         }
         if (!beyondPresent) {
-            Isleweaver.LOGGER.info("[MultiPackFilter] beyond_terrain NOT present — filter DISABLED, passing packs through unmodified (soup-mode / Enderscape-only / vanilla).");
+            Isleweaver.LOGGER.debug("[MultiPackFilter] beyond_terrain NOT present, filter DISABLED, passing packs through unmodified (soup-mode / Enderscape-only / vanilla).");
             return packs;
         }
 
@@ -72,13 +72,11 @@ public class MultiPackResourceManagerMixin {
                 skippedBeyondIds.add(id);
                 continue;
             }
-            // already wrapped — don't wrap again
             if (pr instanceof EndDimensionFilteringPackResources) {
                 filtered.add(pr);
                 continue;
             }
 
-            // only wrap packs that actually ship a contested End dimension file
             boolean hasDimension = pr.getResource(PackType.SERVER_DATA, END_DIMENSION) != null;
             boolean hasDimensionType = pr.getResource(PackType.SERVER_DATA, END_DIMENSION_TYPE) != null;
             if (hasDimension || hasDimensionType) {
@@ -90,17 +88,17 @@ public class MultiPackResourceManagerMixin {
             }
         }
 
-        Isleweaver.LOGGER.info(
-                "[MultiPackFilter] beyond_terrain ACTIVE — wrapped {} foreign pack(s), passed {} Beyond pack(s) through, passed {} foreign pack(s) through unmodified.",
+        Isleweaver.LOGGER.debug(
+                "[MultiPackFilter] beyond_terrain ACTIVE, wrapped {} foreign pack(s), passed {} Beyond pack(s) through, passed {} foreign pack(s) through unmodified.",
                 wrappedIds.size(), skippedBeyondIds.size(), unwrappedForeignIds.size());
         if (!wrappedIds.isEmpty()) {
-            Isleweaver.LOGGER.info("[MultiPackFilter]   wrapped (dim files STRIPPED): {}", wrappedIds);
+            Isleweaver.LOGGER.debug("[MultiPackFilter]   wrapped (dim files STRIPPED): {}", wrappedIds);
         }
         if (!skippedBeyondIds.isEmpty()) {
-            Isleweaver.LOGGER.info("[MultiPackFilter]   Beyond-owned (passed through): {}", skippedBeyondIds);
+            Isleweaver.LOGGER.debug("[MultiPackFilter]   Beyond-owned (passed through): {}", skippedBeyondIds);
         }
         if (!unwrappedForeignIds.isEmpty()) {
-            Isleweaver.LOGGER.info("[MultiPackFilter]   foreign, no End dim files (passed through): {}", unwrappedForeignIds);
+            Isleweaver.LOGGER.debug("[MultiPackFilter]   foreign, no End dim files (passed through): {}", unwrappedForeignIds);
         }
         return filtered;
     }

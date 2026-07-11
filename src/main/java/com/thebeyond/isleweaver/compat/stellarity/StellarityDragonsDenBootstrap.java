@@ -94,7 +94,7 @@ public final class StellarityDragonsDenBootstrap {
                     }
                 }
                 if (lateKills > 0) {
-                    Isleweaver.LOGGER.info(
+                    Isleweaver.LOGGER.debug(
                             "[Isleweaver] Delayed kill pass (tick {}): removed {} late-indexed ring crystal(s).",
                             tickSincePlacement, lateKills);
                 }
@@ -124,8 +124,7 @@ public final class StellarityDragonsDenBootstrap {
             return;
         }
 
-        // gate the cleanup behind a per-world flag — otherwise the ring-crystal kill re-runs on every
-        // reload and wipes the live fight crystals when you leave and rejoin mid-fight
+        // gate cleanup behind a per-world flag, else the ring-crystal kill re-runs on reload and wipes live fight crystals when you rejoin mid-fight
         State state = State.get(end);
         if (state.done) {
             placedThisSession = true;
@@ -136,8 +135,8 @@ public final class StellarityDragonsDenBootstrap {
         for (Entity e : nearby) {
             if (!(e instanceof EndCrystal)
                     && (e.getTags().contains("fe.exit_portal") || e.getTags().contains("stellarity.marker"))) {
-                Isleweaver.LOGGER.info(
-                        "[Isleweaver] Stellarity marker entity already present — skipping compat fix.");
+                Isleweaver.LOGGER.debug(
+                        "[Isleweaver] Stellarity marker entity already present, skipping compat fix.");
                 state.markDone();
                 placedThisSession = true;
                 return;
@@ -166,7 +165,7 @@ public final class StellarityDragonsDenBootstrap {
             }
         }
         if (ringCrystalsKilled > 0) {
-            Isleweaver.LOGGER.info(
+            Isleweaver.LOGGER.debug(
                     "[Isleweaver] Killed {} pre-existing ring crystal(s) at Stellarity spike positions.",
                     ringCrystalsKilled);
         }
@@ -179,8 +178,8 @@ public final class StellarityDragonsDenBootstrap {
                 double dz = ec.getZ() - CRYSTAL_Z;
                 if (Math.abs(dy) < 0.6D && Math.abs(dx) < 0.6D && Math.abs(dz) < 0.6D) {
                     centerCrystalExists = true;
-                    Isleweaver.LOGGER.info(
-                            "[Isleweaver] Center crystal already exists at ({}, {}, {}) — skipping placement, but force-load and ring kill still ran.",
+                    Isleweaver.LOGGER.debug(
+                            "[Isleweaver] Center crystal already exists at ({}, {}, {}), skipping placement, but force-load and ring kill still ran.",
                             ec.getX(), ec.getY(), ec.getZ());
                     break;
                 }
@@ -196,7 +195,7 @@ public final class StellarityDragonsDenBootstrap {
                 crystal.setShowBottom(false);
                 crystal.moveTo(CRYSTAL_X, CRYSTAL_Y, CRYSTAL_Z, 0.0F, 0.0F);
                 end.addFreshEntity(crystal);
-                Isleweaver.LOGGER.info(
+                Isleweaver.LOGGER.debug(
                         "[Isleweaver] Placed exit-portal crystal at (0.5, 61, 0.5).");
             } else {
                 Isleweaver.LOGGER.warn(
@@ -204,7 +203,7 @@ public final class StellarityDragonsDenBootstrap {
             }
         }
 
-        Isleweaver.LOGGER.info(
+        Isleweaver.LOGGER.debug(
                 "[Isleweaver] Stellarity compat: force-loaded {} chunks for {} ticks, killed {} ring crystals.",
                 forcedChunks.size(), UNFORCE_DELAY_TICKS, ringCrystalsKilled);
 
@@ -220,7 +219,7 @@ public final class StellarityDragonsDenBootstrap {
         for (ChunkPos cp : forcedChunks) {
             end.setChunkForced(cp.x, cp.z, false);
         }
-        Isleweaver.LOGGER.info(
+        Isleweaver.LOGGER.debug(
                 "[Isleweaver] Released {} forced chunks after Stellarity post_gen window closed.",
                 forcedChunks.size());
         forcedChunks.clear();

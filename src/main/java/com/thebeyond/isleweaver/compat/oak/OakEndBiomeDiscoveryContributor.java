@@ -11,8 +11,7 @@ import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Set;
 
-// Oak's End and Oak Frontier register biomes outside the tag system, so we reflect into their
-// ADDED_BIOMES sets to find them
+// Oak's End and Oak Frontier register biomes outside the tag system, so we reflect into their ADDED_BIOMES sets
 public final class OakEndBiomeDiscoveryContributor {
     private OakEndBiomeDiscoveryContributor() {}
 
@@ -50,7 +49,6 @@ public final class OakEndBiomeDiscoveryContributor {
                         discovered, className);
             }
         } catch (ClassNotFoundException ignored) {
-            // mod isn't installed
         } catch (Throwable t) {
             Isleweaver.LOGGER.debug("[Isleweaver] Reading {} ADDED_BIOMES failed (non-fatal): {}",
                     className, t.toString());

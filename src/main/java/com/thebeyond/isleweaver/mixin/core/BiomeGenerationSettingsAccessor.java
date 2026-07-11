@@ -14,5 +14,5 @@ import java.util.List;
 public interface BiomeGenerationSettingsAccessor {
     @Mutable
     @Accessor("features")
-    void convergence$setFeatures(List<HolderSet<PlacedFeature>> features);
+    void isleweaver$setFeatures(List<HolderSet<PlacedFeature>> features);
 }

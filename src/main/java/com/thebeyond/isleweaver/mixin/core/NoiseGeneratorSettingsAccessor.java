@@ -9,9 +9,9 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 @Mixin(NoiseGeneratorSettings.class)
 public interface NoiseGeneratorSettingsAccessor {
     @Accessor("surfaceRule")
-    SurfaceRules.RuleSource convergence$getSurfaceRule();
+    SurfaceRules.RuleSource isleweaver$getSurfaceRule();
 
     @Mutable
     @Accessor("surfaceRule")
-    void convergence$setSurfaceRule(SurfaceRules.RuleSource rule);
+    void isleweaver$setSurfaceRule(SurfaceRules.RuleSource rule);
 }

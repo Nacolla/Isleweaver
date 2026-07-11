@@ -36,7 +36,7 @@ public final class FabricEndBiomeSurfaceContributor {
                 resourceManager.listResources(DATA_PATH, loc -> loc.getPath().endsWith(".json"));
 
         List<String> packIds = resourceManager.listPacks().map(PackResources::packId).toList();
-        Isleweaver.LOGGER.info(
+        Isleweaver.LOGGER.debug(
                 "[FabricEndDiag] {} .json found={} | RM namespaces={} | packs={}",
                 DATA_PATH, files.size(), resourceManager.getNamespaces(), packIds);
 
@@ -55,7 +55,7 @@ public final class FabricEndBiomeSurfaceContributor {
         }
 
         if (!contributed.isEmpty()) {
-            Isleweaver.LOGGER.info(
+            Isleweaver.LOGGER.debug(
                     "[Isleweaver] Contributed {} End biome surface rule(s) from {} convention: {}",
                     contributed.size(), DATA_PATH, contributed);
         }

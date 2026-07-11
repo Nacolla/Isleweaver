@@ -12,7 +12,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.biome.Biome;
 
-// coarse 2D simplex keeps warped_reef as one coherent region; the 3D Voronoi path scattered it too thinly
+// coarse 2D simplex keeps warped_reef as one coherent macro region instead of a thin scatter
 public final class WarpedReefMacroRegion implements MacroRegionOverride {
     private static final ResourceLocation BIOME_ID =
             ResourceLocation.fromNamespaceAndPath("unusualend", "warped_reef");

@@ -13,5 +13,5 @@ import java.util.List;
 public interface PlacedFeatureAccessor {
     @Mutable
     @Accessor("placement")
-    void convergence$setPlacement(List<PlacementModifier> placement);
+    void isleweaver$setPlacement(List<PlacementModifier> placement);
 }

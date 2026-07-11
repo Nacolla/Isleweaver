@@ -18,8 +18,7 @@ import net.minecraft.world.level.levelgen.placement.PlacementModifier;
 import java.util.ArrayList;
 import java.util.List;
 
-// Enderscape's height_range floors are absolute >= 0, so they never place below bedrock-level;
-// swap them to above_bottom:0 so features also cover the new [-64, 0] band
+// Enderscape's height_range floors are absolute >= 0; swap them to above_bottom:0 so features cover the new [-64, 0] band
 public final class PlacedFeatureRewriter {
     private PlacedFeatureRewriter() {}
 
@@ -32,7 +31,7 @@ public final class PlacedFeatureRewriter {
             if (rewritePlacedFeature(pf)) total++;
         }
         if (total > 0) {
-            Isleweaver.LOGGER.info("[Isleweaver] Rewrote {} Enderscape placed_features for Y<0 coverage", total);
+            Isleweaver.LOGGER.debug("[Isleweaver] Rewrote {} Enderscape placed_features for Y<0 coverage", total);
         }
     }
 
@@ -48,13 +47,13 @@ public final class PlacedFeatureRewriter {
             }
         }
         if (modified == null) return false;
-        ((PlacedFeatureAccessor) (Object) pf).convergence$setPlacement(List.copyOf(modified));
+        ((PlacedFeatureAccessor) (Object) pf).isleweaver$setPlacement(List.copyOf(modified));
         return true;
     }
 
     private static PlacementModifier rewriteModifier(PlacementModifier mod) {
         if (mod instanceof HeightRangePlacement hrp) {
-            HeightProvider hp = ((HeightRangePlacementAccessor) (Object) hrp).convergence$getHeight();
+            HeightProvider hp = ((HeightRangePlacementAccessor) (Object) hrp).isleweaver$getHeight();
             HeightProvider rewrittenHp = rewriteHeightProvider(hp);
             if (rewrittenHp != hp) {
                 return HeightRangePlacement.of(rewrittenHp);
@@ -66,10 +65,10 @@ public final class PlacedFeatureRewriter {
     private static HeightProvider rewriteHeightProvider(HeightProvider hp) {
         if (hp instanceof UniformHeight uh) {
             UniformHeightAccessor acc = (UniformHeightAccessor) (Object) uh;
-            VerticalAnchor min = acc.convergence$getMinInclusive();
+            VerticalAnchor min = acc.isleweaver$getMinInclusive();
             VerticalAnchor newMin = rewriteLowerAnchor(min);
             if (newMin != min) {
-                return UniformHeight.of(newMin, acc.convergence$getMaxInclusive());
+                return UniformHeight.of(newMin, acc.isleweaver$getMaxInclusive());
             }
         }
         return hp;
