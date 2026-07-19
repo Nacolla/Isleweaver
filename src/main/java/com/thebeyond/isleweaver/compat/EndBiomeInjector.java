@@ -13,6 +13,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.level.biome.BiomeSource;
 import net.minecraft.world.level.biome.Climate;
 import net.minecraft.world.level.biome.MultiNoiseBiomeSource;
@@ -21,7 +22,7 @@ import net.minecraft.world.level.dimension.LevelStem;
 
 import java.util.*;
 
-// injects Beyond biomes into the End. Climate params for MultiNoiseBiomeSource (Enderscape), holders for vanilla TheEndBiomeSource
+// injects Beyond biomes into the End: splits existing climate boxes for MultiNoiseBiomeSource (Enderscape), stages holders for vanilla TheEndBiomeSource
 public final class EndBiomeInjector {
 
     private static final String BEYOND_NAMESPACE = "the_beyond";
@@ -34,6 +35,10 @@ public final class EndBiomeInjector {
             ResourceLocation.fromNamespaceAndPath(BEYOND_NAMESPACE, "the_paths"));
     private static final ResourceKey<Biome> TRUE_VOID = ResourceKey.create(Registries.BIOME,
             ResourceLocation.fromNamespaceAndPath(BEYOND_NAMESPACE, "true_void"));
+    private static final ResourceKey<Biome> FUMAROLE_UPLANDS = ResourceKey.create(Registries.BIOME,
+            ResourceLocation.fromNamespaceAndPath(BEYOND_NAMESPACE, "fumarole_uplands"));
+    private static final ResourceKey<Biome> ENDERSCAPE_VOID_DEPTHS = ResourceKey.create(Registries.BIOME,
+            ResourceLocation.fromNamespaceAndPath("enderscape", "void_depths"));
 
     // read by TheEndBiomeSourceMixin; stays null when the End source isn't vanilla
     public static volatile VanillaEndHolders vanillaEndHolders;
@@ -45,13 +50,16 @@ public final class EndBiomeInjector {
         public final Holder<Biome> peerLands;
         public final Holder<Biome> trueVoid;
         public final Holder<Biome> thePaths;
+        public final Holder<Biome> fumaroleUplands;
 
         public VanillaEndHolders(Holder<Biome> attractaExpanse, Holder<Biome> peerLands,
-                                  Holder<Biome> trueVoid, Holder<Biome> thePaths) {
+                                  Holder<Biome> trueVoid, Holder<Biome> thePaths,
+                                  Holder<Biome> fumaroleUplands) {
             this.attractaExpanse = attractaExpanse;
             this.peerLands = peerLands;
             this.trueVoid = trueVoid;
             this.thePaths = thePaths;
+            this.fumaroleUplands = fumaroleUplands;
         }
     }
 
@@ -77,62 +85,24 @@ public final class EndBiomeInjector {
         }
     }
 
+    // Slices the existing End biome boxes to seat the Beyond biomes without competing for climate space or risking a tie-break.
     private static void injectIntoMultiNoise(MultiNoiseBiomeSource multiNoise, RegistryAccess registryAccess) {
         Registry<Biome> biomeRegistry = registryAccess.registryOrThrow(Registries.BIOME);
 
         Climate.ParameterList<Holder<Biome>> paramList = multiNoise.parameters
                 .map(direct -> direct, preset -> preset.value().parameters());
 
-        List<Pair<Climate.ParameterPoint, Holder<Biome>>> existing = paramList.values();
-        List<Pair<Climate.ParameterPoint, Holder<Biome>>> merged = new ArrayList<>(existing);
+        List<Pair<Climate.ParameterPoint, Holder<Biome>>> merged = new ArrayList<>(paramList.values());
+
         int added = 0;
-
-        // positive temp keeps end_highlands[-1,0] from dominating this slot
-        added += tryAdd(merged, biomeRegistry, ATTRACTA_EXPANSE, Climate.parameters(
-                Climate.Parameter.span(0.0F, 0.3F),
-                Climate.Parameter.span(-1.0F, 1.0F),
-                Climate.Parameter.span(-0.55F, 0.55F),
-                Climate.Parameter.span(0.50025F, 2.0F),
-                Climate.Parameter.span(0.2F, 1.025F),
-                Climate.Parameter.span(-0.05F, 1.0F),
-                0
-        ));
-
-        added += tryAdd(merged, biomeRegistry, PEER_LANDS, Climate.parameters(
-                Climate.Parameter.span(0.0F, 0.3F),
-                Climate.Parameter.span(-1.0F, 1.0F),
-                Climate.Parameter.span(-0.55F, 0.55F),
-                Climate.Parameter.span(0.50025F, 2.0F),
-                Climate.Parameter.span(-0.4F, 0.2F),
-                Climate.Parameter.span(-0.05F, 1.0F),
-                0
-        ));
-
-        added += tryAdd(merged, biomeRegistry, TRUE_VOID, Climate.parameters(
-                Climate.Parameter.span(0.0F, 1.0F),
-                Climate.Parameter.span(-1.0F, 1.0F),
-                Climate.Parameter.span(-1.0F, 1.0F),
-                Climate.Parameter.span(-1.0F, 2.0F),
-                Climate.Parameter.span(-0.1F, 0.05F),
-                Climate.Parameter.span(-1.0F, -0.05F),
-                0
-        ));
-
-        // shares a climate slot with enderscape:void_depths. Prepend so the tie-break hands the_paths the weirdness>=0 side
-        added += tryAddFirst(merged, biomeRegistry, THE_PATHS, Climate.parameters(
-                Climate.Parameter.span(-1.0F, 1.0F),
-                Climate.Parameter.span(-1.0F, 1.0F),
-                Climate.Parameter.span(-1.0F, 1.0F),
-                Climate.Parameter.span(-1.0F, 2.0F),
-                Climate.Parameter.span(-1.5F, -0.4F),
-                Climate.Parameter.span(0.0F, 1.0F),
-                0
-        ));
+        added += splitBox(merged, biomeRegistry, Biomes.END_HIGHLANDS, FUMAROLE_UPLANDS, ATTRACTA_EXPANSE);
+        added += splitBox(merged, biomeRegistry, Biomes.END_MIDLANDS, PEER_LANDS);
+        added += splitBox(merged, biomeRegistry, Biomes.SMALL_END_ISLANDS, TRUE_VOID);
+        added += splitBox(merged, biomeRegistry, ENDERSCAPE_VOID_DEPTHS, THE_PATHS);
 
         if (added == 0) return;
 
-        Climate.ParameterList<Holder<Biome>> newParamList = new Climate.ParameterList<>(merged);
-        multiNoise.parameters = Either.left(newParamList);
+        multiNoise.parameters = Either.left(new Climate.ParameterList<>(merged));
 
         Set<Holder<Biome>> allBiomes = merged.stream()
                 .map(Pair::getSecond)
@@ -140,7 +110,7 @@ public final class EndBiomeInjector {
                 .collect(ImmutableSet.toImmutableSet());
         ((BiomeSource) multiNoise).possibleBiomes = Suppliers.memoize(() -> allBiomes);
 
-        Isleweaver.LOGGER.debug("[Isleweaver] Injected {} Beyond biomes into End MultiNoiseBiomeSource ({} total)",
+        Isleweaver.LOGGER.debug("[Isleweaver] Sliced {} Beyond biome band(s) into End MultiNoiseBiomeSource ({} entries total)",
                 added, merged.size());
     }
 
@@ -152,13 +122,14 @@ public final class EndBiomeInjector {
         Holder<Biome> peer = biomeRegistry.getHolder(PEER_LANDS).orElse(null);
         Holder<Biome> trueV = biomeRegistry.getHolder(TRUE_VOID).orElse(null);
         Holder<Biome> paths = biomeRegistry.getHolder(THE_PATHS).orElse(null);
+        Holder<Biome> fumarole = biomeRegistry.getHolder(FUMAROLE_UPLANDS).orElse(null);
 
-        if (attracta == null && peer == null && trueV == null && paths == null) {
+        if (attracta == null && peer == null && trueV == null && paths == null && fumarole == null) {
             Isleweaver.LOGGER.warn("[Isleweaver] No Beyond biomes found in registry, skipping vanilla End setup");
             return;
         }
 
-        vanillaEndHolders = new VanillaEndHolders(attracta, peer, trueV, paths);
+        vanillaEndHolders = new VanillaEndHolders(attracta, peer, trueV, paths, fumarole);
 
         // keep the possibleBiomes cache in sync so /locate can find these
         Set<Holder<Biome>> allBiomes = new HashSet<>(biomeSource.possibleBiomes());
@@ -166,36 +137,54 @@ public final class EndBiomeInjector {
         if (peer != null) allBiomes.add(peer);
         if (trueV != null) allBiomes.add(trueV);
         if (paths != null) allBiomes.add(paths);
+        if (fumarole != null) allBiomes.add(fumarole);
         ImmutableSet<Holder<Biome>> finalBiomes = ImmutableSet.copyOf(allBiomes);
         biomeSource.possibleBiomes = Suppliers.memoize(() -> finalBiomes);
 
         Isleweaver.LOGGER.debug("[Isleweaver] Set up vanilla End biome injection (TheEndBiomeSourceMixin active)");
     }
 
-    private static int tryAdd(List<Pair<Climate.ParameterPoint, Holder<Biome>>> merged,
-                               Registry<Biome> registry,
-                               ResourceKey<Biome> key,
-                               Climate.ParameterPoint params) {
-        Optional<Holder.Reference<Biome>> holder = registry.getHolder(key);
-        if (holder.isPresent()) {
-            merged.add(Pair.of(params, holder.get()));
-            return 1;
+    // Splits the box into equal continentalness bands, one per Beyond biome. Continentalness is horizontal and fully sampled, so the bands spread across separate islands instead of stacking in a column like a depth split would.
+    @SafeVarargs
+    private static int splitBox(List<Pair<Climate.ParameterPoint, Holder<Biome>>> merged,
+                                Registry<Biome> registry, ResourceKey<Biome> existingKey,
+                                ResourceKey<Biome>... beyondKeys) {
+        int idx = -1;
+        for (int i = 0; i < merged.size(); i++) {
+            if (merged.get(i).getSecond().is(existingKey)) { idx = i; break; }
         }
-        Isleweaver.LOGGER.warn("[Isleweaver] Biome {} not in registry, skipping injection", key.location());
-        return 0;
+        if (idx < 0) {
+            Isleweaver.LOGGER.debug("[Isleweaver] {} not in End parameter list, skipping split", existingKey.location());
+            return 0;
+        }
+
+        List<Holder<Biome>> beyond = new ArrayList<>();
+        for (ResourceKey<Biome> key : beyondKeys) {
+            Optional<Holder.Reference<Biome>> holder = registry.getHolder(key);
+            if (holder.isPresent()) beyond.add(holder.get());
+            else Isleweaver.LOGGER.warn("[Isleweaver] Biome {} not in registry, skipping split band", key.location());
+        }
+        if (beyond.isEmpty()) return 0;
+
+        Climate.ParameterPoint point = merged.get(idx).getFirst();
+        Holder<Biome> original = merged.get(idx).getSecond();
+        Climate.Parameter cont = point.continentalness();
+        float min = cont.min() / 10000.0F;
+        float max = cont.max() / 10000.0F;
+        int bands = beyond.size() + 1;
+        float step = (max - min) / bands;
+
+        merged.set(idx, Pair.of(withContinentalness(point, min, min + step), original));
+        for (int b = 1; b < bands; b++) {
+            float lo = min + step * b;
+            float hi = (b == bands - 1) ? max : min + step * (b + 1);
+            merged.add(Pair.of(withContinentalness(point, lo, hi), beyond.get(b - 1)));
+        }
+        return beyond.size();
     }
 
-    // like tryAdd but prepends, so this entry wins distance-0 climate ties
-    private static int tryAddFirst(List<Pair<Climate.ParameterPoint, Holder<Biome>>> merged,
-                                    Registry<Biome> registry,
-                                    ResourceKey<Biome> key,
-                                    Climate.ParameterPoint params) {
-        Optional<Holder.Reference<Biome>> holder = registry.getHolder(key);
-        if (holder.isPresent()) {
-            merged.add(0, Pair.of(params, holder.get()));
-            return 1;
-        }
-        Isleweaver.LOGGER.warn("[Isleweaver] Biome {} not in registry, skipping injection", key.location());
-        return 0;
+    private static Climate.ParameterPoint withContinentalness(Climate.ParameterPoint p, float min, float max) {
+        return Climate.parameters(p.temperature(), p.humidity(), Climate.Parameter.span(min, max),
+                p.erosion(), p.depth(), p.weirdness(), p.offset());
     }
 }

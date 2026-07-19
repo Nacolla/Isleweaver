@@ -4,6 +4,7 @@ import com.thebeyond.api.event.BeyondServerLifecycleEvent;
 import com.thebeyond.isleweaver.Isleweaver;
 import com.thebeyond.isleweaver.compat.EndBiomeDiscovery;
 import com.thebeyond.isleweaver.compat.EndBiomeInjector;
+import com.thebeyond.isleweaver.compat.EndFeatureOrderNormalizer;
 import com.thebeyond.isleweaver.compat.SurfaceRuleMerger;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
@@ -64,6 +65,8 @@ public final class EndCompatOrchestrator {
         Isleweaver.LOGGER.debug("[Isleweaver] Beyond terrain not active, running fallback biome injection");
         SurfaceRuleMerger.mergeSurfaceRules(server);
         EndBiomeInjector.injectBiomes(server);
+        // IsleweaverLifecycle's normalizer is Beyond-gated, so soup runs it here to avoid a FeatureSorter cycle
+        EndFeatureOrderNormalizer.apply(server);
     }
 
     @SubscribeEvent

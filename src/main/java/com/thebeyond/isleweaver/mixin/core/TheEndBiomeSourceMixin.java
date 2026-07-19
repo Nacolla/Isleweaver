@@ -57,6 +57,10 @@ public class TheEndBiomeSourceMixin {
             if (erosion < -0.1 && holders.thePaths != null) {
                 cir.setReturnValue(holders.thePaths);
             }
+        } else if (original.is(Biomes.END_MIDLANDS)) {
+            if (holders.fumaroleUplands != null) {
+                cir.setReturnValue(holders.fumaroleUplands);
+            }
         }
     }
 }
