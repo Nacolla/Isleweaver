@@ -5,7 +5,8 @@
   "refmap": "isleweaver.refmap.json",
   "mixins": [
     "CrystalSpikeFeatureMixin",
-    "DragonMintBlockMixin"
+    "DragonMintBlockMixin",
+    "ModGameEventsMixin"
   ],
   "server": [],
   "injectors": {
