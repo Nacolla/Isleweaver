@@ -10,7 +10,7 @@ import net.minecraft.world.level.levelgen.Heightmap;
 import net.neoforged.fml.ModList;
 import net.neoforged.neoforge.event.entity.RegisterSpawnPlacementsEvent;
 
-// LM ships no SpawnPlacements, so on NeoForge its mobs fall back to NO_RESTRICTIONS and spawn mid-air; give them ON_GROUND + vanilla monster-spawn-rule placement instead
+// Legendary Monsters ships no spawn placements, so its mobs get ON_GROUND with vanilla monster rules
 public final class LegendaryMonstersSpawns {
     private static final String MOD = "legendary_monsters";
 

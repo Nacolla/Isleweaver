@@ -12,7 +12,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.List;
 
-// swaps vanilla's seed-random spike ring for Stellarity's fixed 10-spike layout; this list mirrors ring.json, keep them in sync
+// Stellarity's fixed 10-spike ring instead of vanilla's random one, keep this list in sync with ring.json
 @Mixin(SpikeFeature.class)
 public abstract class SpikeFeatureStellarityCompatMixin {
 

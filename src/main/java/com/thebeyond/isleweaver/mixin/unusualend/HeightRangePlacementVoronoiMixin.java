@@ -26,7 +26,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
-// for Voronoi-floating features, pick Y from the reef cell bands, not uniformly over the range (which would miss the reef cells almost always)
+// Voronoi-floating features pick Y from the reef cell bands, a uniform Y would almost always miss
 @Mixin(HeightRangePlacement.class)
 public abstract class HeightRangePlacementVoronoiMixin {
 

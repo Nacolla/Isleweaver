@@ -51,6 +51,14 @@ versionRange="[${the_beyond_version},)"
 ordering="AFTER"
 side="BOTH"
 
+# After TerraBlender: Enderscape, ordered after us, loads TerraBlender's End registry in its constructor
+[[dependencies.${mod_id}]]
+modId="terrablender"
+type="optional"
+versionRange="*"
+ordering="AFTER"
+side="BOTH"
+
 [[dependencies.${mod_id}]]
 modId="astrological"
 type="optional"

@@ -20,7 +20,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 import java.util.HashMap;
 import java.util.Map;
 
-// places Stellarity's ring spikes with vanilla absolute-Y semantics from a static table, since BetterEnd's getHeight() would otherwise remap them
+// Stellarity's ring spikes at vanilla absolute Y from a static table, BetterEnd's getHeight() would remap them
 @Mixin(SpikeFeature.class)
 public abstract class SpikeFeaturePlacementStellarityMixin {
 
@@ -66,7 +66,7 @@ public abstract class SpikeFeaturePlacementStellarityMixin {
             return;
         }
 
-        // let BetterEnd handle the center spike (0,0); an event handler places its marker crystal
+        // BetterEnd handles the center spike (0,0), an event handler places its marker crystal
         if (spike.getCenterX() == 0 && spike.getCenterZ() == 0) {
             placeSpike(level, random, config, spike);
             return;

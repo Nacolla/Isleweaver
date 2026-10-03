@@ -18,7 +18,6 @@ public final class Isleweaver {
         com.thebeyond.isleweaver.compat.unusualend.WarpedReefMacroRegion.register();
         modEventBus.addListener(com.thebeyond.isleweaver.lifecycle.IsleweaverLifecycle::onBeyondCommonSetup);
         modEventBus.addListener(com.thebeyond.isleweaver.lifecycle.IsleweaverLifecycle::onBeyondTerrainPackAssemble);
-        // LM ships no SpawnPlacements for its mobs (they'd spawn mid-air); register ground placements for them
         modEventBus.addListener(com.thebeyond.isleweaver.compat.legendary_monsters.LegendaryMonstersSpawns::onRegisterSpawnPlacements);
         // MES megaship tuning. Register only when MES is present, so the config file appears.
         if (ModList.get().isLoaded("mes")) {

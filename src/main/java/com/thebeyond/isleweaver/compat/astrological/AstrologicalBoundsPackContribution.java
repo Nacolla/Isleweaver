@@ -5,7 +5,7 @@ import com.thebeyond.isleweaver.Isleweaver;
 import com.thebeyond.isleweaver.compat.BoundsPackBuilder;
 import net.minecraft.server.packs.repository.Pack;
 
-// Astrological y-bounds override (-256..384); priority 100 beats Enderscape's 50
+// Astrological's End height (-256..384), priority 100 over Enderscape's 50
 public final class AstrologicalBoundsPackContribution {
     private static final String PACK_NAME = "isleweaver_astrological_bounds";
     private static final int PRIORITY = 100;

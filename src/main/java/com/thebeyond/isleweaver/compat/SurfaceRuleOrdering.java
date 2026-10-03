@@ -14,7 +14,7 @@ import net.minecraft.world.level.levelgen.SurfaceRules;
 import java.util.ArrayList;
 import java.util.List;
 
-// SequenceRuleSource/TestRuleSource are package-private, so these helpers round-trip through the public RuleSource codec JSON instead of reflecting into the records directly
+// The rule records are package-private, so these helpers work on the codec JSON (openTransientRules aside)
 public final class SurfaceRuleOrdering {
     private SurfaceRuleOrdering() {}
 
@@ -27,8 +27,12 @@ public final class SurfaceRuleOrdering {
     private static final String CONDITION_TYPE = "minecraft:condition";
     private static final String BIOME_TYPE = "minecraft:biome";
     private static final String BLOCK_TYPE = "minecraft:block";
+    private static final String LITHOSTITCHED_TRANSIENT =
+            "dev.worldgen.lithostitched.impl.worldgen.surface.rule.TransientMergedRule";
+    private static final Class<?> SEQUENCE_CLASS =
+            SurfaceRules.sequence(SurfaceRules.bandlands(), SurfaceRules.bandlands()).getClass();
 
-    // confineToBiomeGuarded true: only biome-confined clauses may promote past a filler (caller isn't isBiome-wrapped); false: any clause promotes. Fail-soft: rule unchanged if the codec round-trip fails
+    // confined: only biome-confined clauses may pass a filler. The rule is unchanged if the codec fails
     public static SurfaceRules.RuleSource bubbleTerminatorsLast(SurfaceRules.RuleSource rule, boolean confineToBiomeGuarded) {
         if (rule == null) return null;
         JsonElement json = encode(rule, JsonOps.INSTANCE, "surface rule for terminator reorder");
@@ -43,7 +47,7 @@ public final class SurfaceRuleOrdering {
         return decoded != null ? decoded : rule;
     }
 
-    // recurses only through sequence[] arrays (a condition node is opaque). Returns the same element by reference when nothing changed so the caller can detect a no-op
+    // recurses only through sequence arrays and returns the same element when nothing changed
     private static JsonElement bubbleTerminatorsLastJson(JsonElement el, boolean confineToBiomeGuarded) {
         if (el == null || !el.isJsonObject()) return el;
         JsonObject o = el.getAsJsonObject();
@@ -59,7 +63,7 @@ public final class SurfaceRuleOrdering {
             normalized.add(n);
         }
 
-        // in confined mode a non-biome-confined conditional is a barrier fillers can't cross: promoting a clause past it would let a global conditional match ahead, re-skinning every biome incl. Beyond's fall-through
+        // in confined mode a global conditional is a barrier, or a promoted clause would re-skin every biome
         JsonArray result = new JsonArray();
         JsonArray segPromotable = new JsonArray();
         JsonArray segFiller = new JsonArray();
@@ -92,7 +96,7 @@ public final class SurfaceRuleOrdering {
         return out;
     }
 
-    // true only for a biome condition, or a sequence whose every entry is itself biome-confined. Anything else (block, non-biome condition, or a sequence containing one) matches globally
+    // a biome condition, or a sequence of biome-confined entries only. Anything else matches globally
     private static boolean isBiomeConfined(JsonElement el) {
         if (el == null || !el.isJsonObject()) return false;
         JsonObject o = el.getAsJsonObject();
@@ -122,13 +126,13 @@ public final class SurfaceRuleOrdering {
         return false;
     }
 
-    // biome-guarded clauses in `active` absent from `base`: per-biome surfaces a foreign mod injected at runtime. Drops globals, fail-soft (WARN, caller keeps the Beyond rule) if encoding fails
+    // biome-guarded clauses in active that base lacks. Globals are dropped and an encode failure warns
     public static List<SurfaceRules.RuleSource> foreignBiomeClausesNotIn(
             SurfaceRules.RuleSource active, SurfaceRules.RuleSource base, RegistryAccess registryAccess) {
         List<SurfaceRules.RuleSource> out = new ArrayList<>();
         DynamicOps<JsonElement> ops = RegistryOps.create(JsonOps.INSTANCE, registryAccess);
 
-        JsonElement activeJson = encode(active, ops, "active End surface rule");
+        JsonElement activeJson = encode(openTransientRules(active), ops, "active End surface rule");
         if (activeJson == null) {
             Isleweaver.LOGGER.warn("[Isleweaver] surface-rule codec introspection unavailable, could not encode the "
                     + "active End rule; foreign biome clauses NOT spliced this run (foreign biomes keep no skin block)");
@@ -153,7 +157,35 @@ public final class SurfaceRuleOrdering {
         return out;
     }
 
-    // positive biome-guarded clauses of a scraped foreign rule; globals and non-biome conditionals dropped so nothing bleeds onto unnamed biomes (unencodable rule returns empty, dropping it wholesale, WARN)
+    // The one reflective helper: Lithostitched's TransientMergedRule encodes only its original, so its additions are opened here
+    static SurfaceRules.RuleSource openTransientRules(SurfaceRules.RuleSource rule) {
+        List<SurfaceRules.RuleSource> parts = new ArrayList<>();
+        try {
+            if (!openInto(rule, parts) || parts.isEmpty()) return rule;
+        } catch (ReflectiveOperationException | RuntimeException e) {
+            Isleweaver.LOGGER.warn("[Isleweaver] could not open Lithostitched surface additions,"
+                    + " their biome clauses are not re-asserted", e);
+            return rule;
+        }
+        Isleweaver.LOGGER.info("[Isleweaver] opened Lithostitched surface additions for the End scan ({} rule(s))", parts.size());
+        return SurfaceRules.sequence(parts.toArray(new SurfaceRules.RuleSource[0]));
+    }
+
+    private static boolean openInto(SurfaceRules.RuleSource rule, List<SurfaceRules.RuleSource> out)
+            throws ReflectiveOperationException {
+        boolean transientRule = rule.getClass().getName().equals(LITHOSTITCHED_TRANSIENT);
+        if (!transientRule && rule.getClass() != SEQUENCE_CLASS) {
+            out.add(rule);
+            return false;
+        }
+        java.lang.reflect.Method parts = rule.getClass().getDeclaredMethod(transientRule ? "rules" : "sequence");
+        parts.setAccessible(true);
+        boolean opened = transientRule;
+        for (Object part : (List<?>) parts.invoke(rule)) opened |= openInto((SurfaceRules.RuleSource) part, out);
+        return opened;
+    }
+
+    // the positive biome-guarded clauses of a foreign rule, empty if it cannot encode
     public static List<SurfaceRules.RuleSource> biomeGuardedClausesOf(
             SurfaceRules.RuleSource rule, RegistryAccess registryAccess) {
         List<SurfaceRules.RuleSource> out = new ArrayList<>();

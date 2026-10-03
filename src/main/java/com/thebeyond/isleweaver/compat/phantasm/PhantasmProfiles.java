@@ -7,7 +7,7 @@ import com.thebeyond.isleweaver.Isleweaver;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.fml.ModList;
 
-// obsidian_tower lands foundationless on Beyond's pancakes (no terrain_adaptation/self-rejection); SEATED adds the footprint rejection + foundation
+// obsidian_tower digs its shaft from y=0 up through every layer, so it keeps vanilla's projection
 public final class PhantasmProfiles {
     private static final String MOD = "phantasm";
 
@@ -18,7 +18,11 @@ public final class PhantasmProfiles {
 
         BeyondForeignStructureProfiles.register(
                 ResourceLocation.fromNamespaceAndPath(MOD, "obsidian_tower"),
-                StructureIntegrationProfile.builder(Anchor.SEATED).build());
+                StructureIntegrationProfile.builder(Anchor.FLOATING)
+                        .carve(false)
+                        .selfHollowing(true)
+                        .floatEnvelope(57) // CountConfiguration 30..50 over the origin, rounded up to a multiple of 7
+                        .build());
 
         Isleweaver.LOGGER.debug("[Isleweaver] Registered End's Phantasm End structure integration profiles (1).");
     }

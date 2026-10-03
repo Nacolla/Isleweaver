@@ -7,7 +7,7 @@ import com.thebeyond.isleweaver.Isleweaver;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.fml.ModList;
 
-// supplies per-structure integration policy for LM's three End structures; the rejection/carve/foundation mechanism lives in Beyond
+// integration policy for Legendary Monsters' three End structures, the carve and seat live in Beyond
 public final class LegendaryMonstersProfiles {
     private static final String MOD = "legendary_monsters";
 
@@ -16,7 +16,7 @@ public final class LegendaryMonstersProfiles {
     public static void register() {
         if (!ModList.get().isLoaded(MOD)) return;
 
-        // shulker_tower + ancient_tower_remains stay unregistered: as minecraft:jigsaw with project_start_to_heightmap they auto-host via Beyond's surface path, and a SEATED profile would suppress that skirt and let the island intrude their bases
+        // the two towers stay unregistered so Beyond auto-hosts them, a SEATED profile would drop their skirt
 
         // space_station floats in the void (none -> FLOATING): ceiling-clip rejection + carve only, no foundation.
         BeyondForeignStructureProfiles.register(

@@ -18,15 +18,14 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-// crystal_spike's origin is heightmap-lifted into air, so the dreaming_den gate is re-resolved from the surface below and the upward pillar scan re-anchored to it.
-// The downward atY(0) scan stays absolute: re-anchoring would fling it skyward.
+// crystal_spike's origin sits in air, so its biome gate and pillar scan re-anchor on the surface below
 @Pseudo
 @Mixin(targets = "net.lyof.phantasm.world.feature.CrystalSpikeFeature")
 public abstract class CrystalSpikeFeatureMixin {
     private static final TagKey<Biome> IS_DREAMING_DEN = TagKey.create(
             Registries.BIOME, ResourceLocation.fromNamespaceAndPath("phantasm", "is_dreaming_den"));
 
-    // ThreadLocal is safe: the getBiome write always precedes the pillar atY read within one single-threaded, non-recursing place() call.
+    // safe: getBiome writes before the pillar reads, inside one single-threaded place() call
     private static final ThreadLocal<Integer> the_beyond$pillarStartY =
             ThreadLocal.withInitial(() -> Integer.MIN_VALUE);
 
@@ -55,7 +54,7 @@ public abstract class CrystalSpikeFeatureMixin {
         }
         the_beyond$pillarStartY.set(surfaceY != Integer.MIN_VALUE ? surfaceY : origin.getY() - 2);
         if (resolved == null) {
-            // no surface found: fall back to the origin biome (likely air, so it won't match is_dreaming_den and place() bails, never a wrong-biome crystal).
+            // no surface: the origin biome is likely air, so place() bails instead of a wrong-biome crystal
             resolved = original.call(level, origin);
         }
         boolean matched = resolved.is(IS_DREAMING_DEN);
@@ -72,7 +71,7 @@ public abstract class CrystalSpikeFeatureMixin {
             at = @At(value = "INVOKE", target = "Lnet/minecraft/core/BlockPos;atY(I)Lnet/minecraft/core/BlockPos;"),
             require = 2)
     private BlockPos the_beyond$reanchorPillarScan(BlockPos self, int y) {
-        // y == 1 is the upward pillar scan start; y == 0 is the downward stalactite scan (leave absolute).
+        // y == 1 starts the upward pillar scan, y == 0 is the downward scan and stays absolute
         if (!BeyondTerrainState.isActive() || y != 1) {
             return self.atY(y);
         }

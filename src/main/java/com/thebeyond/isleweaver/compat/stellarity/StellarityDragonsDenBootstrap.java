@@ -124,7 +124,7 @@ public final class StellarityDragonsDenBootstrap {
             return;
         }
 
-        // gate cleanup behind a per-world flag, else the ring-crystal kill re-runs on reload and wipes live fight crystals when you rejoin mid-fight
+        // a per-world flag, or the ring-crystal cleanup reruns on reload and kills live fight crystals
         State state = State.get(end);
         if (state.done) {
             placedThisSession = true;

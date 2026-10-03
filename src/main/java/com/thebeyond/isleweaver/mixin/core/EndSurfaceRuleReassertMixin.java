@@ -33,7 +33,12 @@ public abstract class EndSurfaceRuleReassertMixin {
         Registry<LevelStem> dimensions = registryAccess().registryOrThrow(Registries.LEVEL_STEM);
         LevelStem endStem = dimensions.get(LevelStem.END);
         if (endStem == null) return;
-        if (!(endStem.generator().getBiomeSource() instanceof BeyondEndBiomeSourceApi)) return;
+        if (!(endStem.generator().getBiomeSource() instanceof BeyondEndBiomeSourceApi)) {
+            // A wrapper installed after the merge hides the Beyond source, and foreign End globals then reach its islands
+            Isleweaver.LOGGER.warn("[Isleweaver] The End biome source became {} after the surface merge,"
+                    + " End surface rules not re-asserted", endStem.generator().getBiomeSource().getClass().getName());
+            return;
+        }
         if (!(endStem.generator() instanceof NoiseBasedChunkGenerator noiseGen)) return;
 
         NoiseGeneratorSettings settings = noiseGen.generatorSettings().value();
@@ -41,7 +46,7 @@ public abstract class EndSurfaceRuleReassertMixin {
         SurfaceRules.RuleSource active = accessor.isleweaver$getSurfaceRule();
         if (active == beyondRule) return; // nothing prepended after the merge
 
-        // keep the foreign mod's per-biome surface clauses so its biomes still get a skin block, but drop its unconditional globals that would re-skin every Beyond island underside
+        // foreign per-biome clauses keep their skin, the globals that would re-skin Beyond islands go
         java.util.List<SurfaceRules.RuleSource> foreignBiome =
                 com.thebeyond.isleweaver.compat.SurfaceRuleOrdering.foreignBiomeClausesNotIn(active, beyondRule, registryAccess());
         SurfaceRules.RuleSource result;
@@ -54,7 +59,7 @@ public abstract class EndSurfaceRuleReassertMixin {
             result = SurfaceRules.sequence(arr);
         }
         accessor.isleweaver$setSurfaceRule(result);
-        Isleweaver.LOGGER.debug(
+        Isleweaver.LOGGER.info(
                 "[Isleweaver] Beyond owns minecraft:the_end, re-asserted merged End surface rule at createLevels TAIL; "
                         + "preserved {} foreign biome-guarded surface clause(s), dropped foreign unconditional globals.",
                 foreignBiome.size());

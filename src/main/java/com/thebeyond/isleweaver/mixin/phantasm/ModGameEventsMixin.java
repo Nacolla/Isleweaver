@@ -9,7 +9,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-// Phantasm's outer-End integration teleports End arrivals to a fixed coordinate (1280, 65, 0); on Beyond's islands that spot can easily be void.
+// Phantasm sends End arrivals to a fixed point (1280, 65, 0), which is often void on Beyond's islands
 @Pseudo
 @Mixin(targets = "net.lyof.phantasm.setup.ModGameEvents")
 public abstract class ModGameEventsMixin {

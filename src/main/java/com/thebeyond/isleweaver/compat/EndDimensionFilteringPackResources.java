@@ -12,7 +12,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Set;
 
-// hides the End dimension/dimension_type jsons from foreign packs so Beyond's pack wins those slots; everything else passes through
+// hides foreign End dimension and dimension_type files so Beyond's pack wins those slots
 public class EndDimensionFilteringPackResources implements PackResources {
 
     private static final ResourceLocation END_DIMENSION = ResourceLocation.fromNamespaceAndPath(

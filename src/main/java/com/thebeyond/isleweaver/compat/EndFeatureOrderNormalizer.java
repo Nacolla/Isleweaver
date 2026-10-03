@@ -21,7 +21,7 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 
-// forces every End biome onto one global per-step feature order so vanilla FeatureSorter's graph stays a DAG and can't throw "Feature order cycle"
+// one global per-step feature order for every End biome, so FeatureSorter never finds a cycle
 public final class EndFeatureOrderNormalizer {
     private EndFeatureOrderNormalizer() {}
 
@@ -82,7 +82,7 @@ public final class EndFeatureOrderNormalizer {
         return rank;
     }
 
-    // rebuilds FeatureSorter's per-step graph to confirm the fix; returns the first clashing pair, or null if clean
+    // rebuilds FeatureSorter's per-step graph and returns the first clashing pair, null when clean
     private static String findCycle(List<Holder<Biome>> biomes, int maxSteps) {
         for (int s = 0; s < maxSteps; s++) {
             Map<PlacedFeature, Map<PlacedFeature, Boolean>> edges = new IdentityHashMap<>();

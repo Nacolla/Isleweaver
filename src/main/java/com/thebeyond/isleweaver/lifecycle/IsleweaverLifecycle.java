@@ -18,17 +18,18 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModList;
 import net.neoforged.fml.common.EventBusSubscriber;
 
-// routes Beyond's API events to the per-compat handlers; each one self-gates on ModList.isLoaded
+// routes Beyond's API events to the per-compat handlers, which self-gate on ModList.isLoaded or key by structure id
 @EventBusSubscriber(modid = Isleweaver.MODID)
 public final class IsleweaverLifecycle {
     private IsleweaverLifecycle() {}
 
     public static void onBeyondCommonSetup(BeyondCommonSetupEvent event) {
-        // foreign-structure integration profiles for the addon's supported End-structure mods (each self-gates)
         com.thebeyond.isleweaver.compat.legendary_monsters.LegendaryMonstersProfiles.register();
         com.thebeyond.isleweaver.compat.phantasm.PhantasmProfiles.register();
         com.thebeyond.isleweaver.compat.unusualend.UnusualEndStructureProfiles.register();
         com.thebeyond.isleweaver.compat.mes.MoogsEndStructuresProfiles.register();
+        com.thebeyond.isleweaver.compat.enderscape.EnderscapeStructureProfiles.register();
+        com.thebeyond.isleweaver.compat.dungeons_and_taverns.DungeonsAndTavernsProfiles.register();
     }
 
     @SubscribeEvent
@@ -58,10 +59,10 @@ public final class IsleweaverLifecycle {
     @SubscribeEvent
     public static void onBeyondAboutToStart(BeyondServerLifecycleEvent.AboutToStart event) {
         if (!event.isBeyondTerrainActive()) return;
+        com.thebeyond.isleweaver.compat.mes.MoogsEndStructuresProfiles.warmUp(event.getServer());
         if (ModList.get().isLoaded("enderscape")) {
             PlacedFeatureRewriter.rewrite(event.getServer());
         }
-        // End structures without a heightmap mis-resolve the surface under Beyond's biome source, so raise their origin (steps 0-8 only)
         EndFeatureHeightmapFix.apply(event.getServer());
         // has to run last. Collapses to a single global per-step feature order so vanilla FeatureSorter can't hit a cycle
         EndFeatureOrderNormalizer.apply(event.getServer());

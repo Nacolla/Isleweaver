@@ -14,7 +14,7 @@ import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import java.util.ArrayList;
 import java.util.List;
 
-// wraps foreign packs so beyond_terrain wins the End dimension slots; no-op when beyond_terrain isn't loaded
+// wraps foreign packs so beyond_terrain wins the End dimension slots, a no-op without it
 @Mixin(MultiPackResourceManager.class)
 public class MultiPackResourceManagerMixin {
 

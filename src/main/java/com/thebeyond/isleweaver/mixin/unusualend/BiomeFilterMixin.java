@@ -23,7 +23,7 @@ import java.util.Set;
 
 @Mixin(BiomeFilter.class)
 public abstract class BiomeFilterMixin {
-    // these resolve their biome from the 3D Voronoi cell, not the air->void mapping, else they'd sample air and never match their target biome
+    // these read the biome of their 3D Voronoi cell, the air-to-void mapping would never match
     private static final Set<ResourceLocation> isleweaver$VORONOI_FLOATING_FEATURES = Set.of(
             ResourceLocation.fromNamespaceAndPath("unusualend", "warped_isles"),
             ResourceLocation.fromNamespaceAndPath("unusualend", "warped_citrine_isles"),

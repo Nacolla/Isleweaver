@@ -18,7 +18,7 @@ import net.minecraft.world.level.levelgen.placement.PlacementModifier;
 import java.util.ArrayList;
 import java.util.List;
 
-// Enderscape's height_range floors are absolute >= 0; swap them to above_bottom:0 so features cover the new [-64, 0] band
+// Enderscape's height_range floors are absolute >= 0, swapped to above_bottom:0 so features cover the new [-64, 0] band
 public final class PlacedFeatureRewriter {
     private PlacedFeatureRewriter() {}
 

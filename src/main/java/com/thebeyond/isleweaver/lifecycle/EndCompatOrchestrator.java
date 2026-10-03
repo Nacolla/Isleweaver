@@ -17,7 +17,7 @@ import net.neoforged.neoforge.event.server.ServerAboutToStartEvent;
 import java.util.List;
 import java.util.Set;
 
-// Early setup: discovery at HIGHEST and injection/surface-merge at HIGH, both ahead of default-priority handlers so biome pools and surface rules land first.
+// discovery at HIGHEST, injection and surface merge at HIGH, both ahead of default listeners
 @EventBusSubscriber(modid = Isleweaver.MODID)
 public final class EndCompatOrchestrator {
 
@@ -42,14 +42,14 @@ public final class EndCompatOrchestrator {
             Isleweaver.LOGGER.debug("[Isleweaver] End-mod biome namespaces detected via tag: {}", endModNamespaces);
         }
 
-        // when Beyond is active it owns the End, so skip fallback injection; soup mode falls through to the compat paths
+        // Beyond owns the End when active, so the fallback injection below is soup mode only
         if (event.isBeyondTerrainActive()) {
             Isleweaver.LOGGER.debug("[Isleweaver] Beyond terrain is active, merging foreign End surface rules");
             SurfaceRuleMerger.mergeSurfaceRules(server, true);
             return;
         }
 
-        // expect at most one entry (the foreign pack that won); more than one means something bypassed the wrapping
+        // at most one entry is expected (the winning foreign pack), more means the wrapping was bypassed
         try {
             List<Resource> stack = server.getResourceManager().getResourceStack(END_DIMENSION);
             if (stack.isEmpty()) {

@@ -33,7 +33,7 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Set;
 
-// Beyond's End source returns bottom_biome at low Y, breaking features with no vertical placement; patch a MOTION_BLOCKING heightmap before the biome filter on steps 0-8 only
+// Beyond's source answers bottom_biome at low Y, so placement-less features get a heightmap (steps 0-8)
 public final class EndFeatureHeightmapFix {
     private EndFeatureHeightmapFix() {}
 
@@ -68,7 +68,7 @@ public final class EndFeatureHeightmapFix {
     }
 
     private static boolean injectHeightmapIfMissing(PlacedFeature pf, ResourceLocation id) {
-        // end spikes and the spawn platform self-place at absolute Y; re-anchoring to a surface heightmap makes ring spikes spawn extra end crystals
+        // spikes and the spawn platform place at absolute Y, a surface heightmap would spawn extra ring crystals
         Feature<?> feature = pf.feature().value().feature();
         if (feature instanceof SpikeFeature || feature instanceof EndPlatformFeature) return false;
 
@@ -82,7 +82,7 @@ public final class EndFeatureHeightmapFix {
             if (m instanceof HeightmapPlacement || m instanceof HeightRangePlacement
                     || m instanceof EnvironmentScanPlacement || m instanceof CarvingMaskPlacement
                     || m instanceof CountOnEveryLayerPlacement) {
-                // count_on_every_layer already drops one per pancake layer. A heightmap on top would flatten them all to the surface
+                // count_on_every_layer already places one per layer, a heightmap would flatten them to the surface
                 return false;
             }
             if (m instanceof RarityFilter) hasRarity = true;
@@ -92,12 +92,12 @@ public final class EndFeatureHeightmapFix {
                 if (biomeFilterIdx < 0) biomeFilterIdx = i;
             }
         }
-        // No-biome-filter scatter (e.g. fallen_star) self-places at an absolute Y; a heightmap would make Beyond's fan-out stack a copy per pancake, so leave it un-anchored.
+        // self-placing scatter (fallen_star) would stack one copy per layer with a heightmap
         if (hasRarity && !hasCount && !hasBiomeFilter) {
             Isleweaver.LOGGER.debug("[Isleweaver][EndHeightmapFix] feature={} action=SKIP_SELF_SCATTER", id);
             return false;
         }
-        // rarity + biome-filter (e.g. crystal_spike) has its filter checked at origin.Y = dim floor, so without a heightmap it's rejected before place(); CrystalSpikeFeatureMixin then re-anchors the per-pancake scan to each firing's surface
+        // crystal_spike's biome filter runs at the floor Y, the heightmap lets it reach place()
         if (hasRarity && !hasCount) {
             Isleweaver.LOGGER.debug("[Isleweaver][EndHeightmapFix] feature={} action=ANCHOR_BIOME_GATED_SCATTER", id);
         }

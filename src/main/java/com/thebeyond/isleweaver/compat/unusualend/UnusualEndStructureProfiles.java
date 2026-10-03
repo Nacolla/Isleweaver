@@ -7,7 +7,7 @@ import com.thebeyond.isleweaver.Isleweaver;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.fml.ModList;
 
-// Unusual End's beard_thin towers float or bury on Beyond's pancakes without footprint rejection and a foundation, so they get SEATED; its terrain_adaptation:none floaters (ships, islands, station) stay vanilla
+// Unusual End's beard_thin towers float or bury on Beyond's layers, so they are SEATED
 public final class UnusualEndStructureProfiles {
     private static final String MOD = "unusualend";
 

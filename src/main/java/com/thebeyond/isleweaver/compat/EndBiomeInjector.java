@@ -22,7 +22,7 @@ import net.minecraft.world.level.dimension.LevelStem;
 
 import java.util.*;
 
-// injects Beyond biomes into the End: splits existing climate boxes for MultiNoiseBiomeSource (Enderscape), stages holders for vanilla TheEndBiomeSource
+// Soup mode only: Beyond biomes enter Enderscape's climate boxes or the vanilla End source
 public final class EndBiomeInjector {
 
     private static final String BEYOND_NAMESPACE = "the_beyond";
@@ -40,7 +40,7 @@ public final class EndBiomeInjector {
     private static final ResourceKey<Biome> ENDERSCAPE_VOID_DEPTHS = ResourceKey.create(Registries.BIOME,
             ResourceLocation.fromNamespaceAndPath("enderscape", "void_depths"));
 
-    // read by TheEndBiomeSourceMixin; stays null when the End source isn't vanilla
+    // read by TheEndBiomeSourceMixin, null unless the End source is vanilla
     public static volatile VanillaEndHolders vanillaEndHolders;
 
     private EndBiomeInjector() {}
@@ -114,7 +114,7 @@ public final class EndBiomeInjector {
                 added, merged.size());
     }
 
-    // only stages the holders here; TheEndBiomeSourceMixin does the actual biome replacement
+    // stages the holders only, TheEndBiomeSourceMixin does the replacement
     private static void setupVanillaEnd(BiomeSource biomeSource, RegistryAccess registryAccess) {
         Registry<Biome> biomeRegistry = registryAccess.registryOrThrow(Registries.BIOME);
 
@@ -144,7 +144,7 @@ public final class EndBiomeInjector {
         Isleweaver.LOGGER.debug("[Isleweaver] Set up vanilla End biome injection (TheEndBiomeSourceMixin active)");
     }
 
-    // Splits the box into equal continentalness bands, one per Beyond biome. Continentalness is horizontal and fully sampled, so the bands spread across separate islands instead of stacking in a column like a depth split would.
+    // continentalness bands spread each Beyond biome over separate islands, a depth split would stack them
     @SafeVarargs
     private static int splitBox(List<Pair<Climate.ParameterPoint, Holder<Biome>>> merged,
                                 Registry<Biome> registry, ResourceKey<Biome> existingKey,

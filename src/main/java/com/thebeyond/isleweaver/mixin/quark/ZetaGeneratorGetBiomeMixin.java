@@ -14,7 +14,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-// in End dims, redirect Zeta's offset=true biome sample from the world top down to the surface. The 3D source reports outer-void up top
+// End only: Zeta's offset=true biome sample moves from the world top, which reads void, to the surface
 @Pseudo
 @Mixin(targets = "org.violetmoon.zeta.world.generator.Generator", remap = false)
 public abstract class ZetaGeneratorGetBiomeMixin {

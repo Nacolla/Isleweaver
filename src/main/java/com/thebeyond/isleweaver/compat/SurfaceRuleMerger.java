@@ -37,7 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-// merges Beyond's surface rules into the End's active noise settings; widens plate thresholds when foreign terrain (Enderscape) owns the dimension
+// merges Beyond's surface rules into the End settings, wider plate thresholds over Enderscape terrain
 public final class SurfaceRuleMerger {
 
     private static final String BEYOND_NAMESPACE = "the_beyond";
@@ -46,7 +46,7 @@ public final class SurfaceRuleMerger {
             ResourceKey.create(Registries.NOISE_SETTINGS,
                     ResourceLocation.fromNamespaceAndPath(BEYOND_NAMESPACE, "the_end"));
 
-    // null unless Beyond owns the End; re-asserted by EndSurfaceRuleReassertMixin to undo foreign End rules a mod prepends later at createLevels TAIL
+    // set only while Beyond owns the End, EndSurfaceRuleReassertMixin restores it after createLevels
     public static volatile SurfaceRules.RuleSource beyondOwnedEndRule;
 
     private SurfaceRuleMerger() {}
@@ -86,7 +86,7 @@ public final class SurfaceRuleMerger {
             Isleweaver.LOGGER.debug("[Isleweaver] Using default surface rule thresholds for Beyond/vanilla terrain");
         }
 
-        // order matters: beyond -> addon -> foreign -> active (active carries in-place mod injections); terminators sink last
+        // order: Beyond, addons, foreign, then active (it carries in-place injections), terminators sink last
         List<SurfaceRules.RuleSource> allRules = new ArrayList<>();
         allRules.add(beyondRule);
 
@@ -95,7 +95,7 @@ public final class SurfaceRuleMerger {
                     new BeyondSurfaceRuleContributionEvent(server, registryAccess, endBiomeSource);
             NeoForge.EVENT_BUS.post(contribEvent);
             allRules.addAll(contribEvent.getContributions());
-            // gate each scraped foreign rule to its positive-biome clauses so no foreign global paints Beyond's fall-through islands. TerraBlender stays before the foreign scan
+            // only the biome-guarded clauses of a foreign rule, so no foreign global paints Beyond islands
             for (SurfaceRules.RuleSource tb : collectTerraBlenderEndRules()) {
                 allRules.addAll(SurfaceRuleOrdering.biomeGuardedClausesOf(tb, registryAccess));
             }
@@ -109,7 +109,7 @@ public final class SurfaceRuleMerger {
 
         SurfaceRules.RuleSource sequenced =
                 SurfaceRules.sequence(allRules.toArray(new SurfaceRules.RuleSource[0]));
-        // true: merged rule is NOT biome-wrapped, so only biome-confined clauses may promote ahead of a foreign filler (an unguarded conditional would re-skin Beyond's fall-through islands)
+        // true: the merged rule is not biome-wrapped, so only biome-confined clauses may pass a foreign filler
         SurfaceRules.RuleSource mergedRule = SurfaceRuleOrdering.bubbleTerminatorsLast(sequenced, true);
 
         ((NoiseGeneratorSettingsAccessor) (Object) activeSettings).isleweaver$setSurfaceRule(mergedRule);
@@ -144,7 +144,7 @@ public final class SurfaceRuleMerger {
             }
         }
 
-        // registry keeps only the pack that won the slot; recover the losers' biome-guarded rules off the stack
+        // the registry keeps only the winning pack, the losers' biome-guarded rules come from the stack
         for (SurfaceRules.RuleSource rule : decodeStackedEndSurfaceRules(server, registryAccess, seen)) {
             foreignRules.add(rule);
         }

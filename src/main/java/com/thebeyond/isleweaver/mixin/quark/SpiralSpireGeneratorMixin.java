@@ -47,7 +47,7 @@ public abstract class SpiralSpireGeneratorMixin {
         return isleweaver$reflectOk;
     }
 
-    // sample the biome only after walking down to END_STONE so the 3D source sees real surface; RNG order matches Quark's
+    // the biome is sampled after walking down to END_STONE so the 3D source sees real surface
     @Inject(
         method = "generateChunkPart(Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/chunk/ChunkGenerator;Ljava/util/Random;Lnet/minecraft/core/BlockPos;Lnet/minecraft/server/level/WorldGenRegion;)V",
         at = @At("HEAD"),

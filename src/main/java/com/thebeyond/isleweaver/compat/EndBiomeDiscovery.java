@@ -1,5 +1,6 @@
 package com.thebeyond.isleweaver.compat;
 
+import com.mojang.datafixers.util.Pair;
 import com.thebeyond.api.event.BeyondBiomeDiscoveryEvent;
 import com.thebeyond.api.worldgen.BeyondBiomeTagScanRegistry;
 import com.thebeyond.api.worldgen.BeyondEndBiomeSourceApi;
@@ -14,15 +15,18 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.tags.TagKey;
+import net.minecraft.util.random.WeightedEntry;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.BiomeSource;
+import net.minecraft.world.level.biome.Climate;
 import net.minecraft.world.level.biome.TheEndBiomeSource;
 import net.minecraft.world.level.dimension.LevelStem;
 import net.neoforged.neoforge.common.NeoForge;
 
+import java.lang.reflect.RecordComponent;
 import java.util.*;
 
-// finds End biomes by their is_end tags and feeds them into Beyond's tainted pool. Tag-driven, no hardcoded mod list
+// finds End biomes (tags, vanilla source mixins, TerraBlender and Lithostitched registries) for Beyond's tainted pool
 public final class EndBiomeDiscovery {
 
     private static final String BEYOND_NAMESPACE = "the_beyond";
@@ -61,6 +65,8 @@ public final class EndBiomeDiscovery {
             collectFromTag(biomeRegistry, extraTag, candidates);
         }
         collectFromVanillaEndBiomeSource(registryAccess, biomeRegistry, candidates);
+        int fromTerraBlender = collectFromTerraBlender(biomeRegistry, candidates);
+        int fromLithostitched = collectFromLithostitched(registryAccess, candidates);
 
         // lets other mods' scanners contribute candidates before the empty check below
         NeoForge.EVENT_BUS.post(new BeyondBiomeDiscoveryEvent(server, biomeRegistry, candidates));
@@ -74,6 +80,8 @@ public final class EndBiomeDiscovery {
         }
 
         int injected = beyondSource.injectBiomesIntoTaintedPool(candidates.values());
+        Isleweaver.LOGGER.info("[Isleweaver] End biomes for the Beyond pool: {} new of {} found"
+                + " (TerraBlender {}, Lithostitched {})", injected, candidates.size(), fromTerraBlender, fromLithostitched);
 
         Set<String> namespaces = foreignNamespaces(candidates.values());
         if (injected > 0) {
@@ -102,7 +110,7 @@ public final class EndBiomeDiscovery {
         return out;
     }
 
-    // foreign is_end namespaces only; safe to call in soup mode where discover-and-inject never runs
+    // foreign is_end namespaces only, safe in soup mode where discovery never runs
     public static Set<String> scanEndModNamespaces(MinecraftServer server) {
         Registry<Biome> biomeRegistry = server.registryAccess().registryOrThrow(Registries.BIOME);
         return foreignNamespaces(biomeRegistry.getTagOrEmpty(IS_END));
@@ -116,7 +124,68 @@ public final class EndBiomeDiscovery {
         }
     }
 
-    // spins up a throwaway TheEndBiomeSource so construction-hooking mixins (Phantasm, UnusualEnd) fire, then grabs its possibleBiomes()
+    // TerraBlender hands its End biomes only to a TheEndBiomeSource it initializes itself, which the Beyond's End never is
+    private static int collectFromTerraBlender(Registry<Biome> registry, Map<ResourceKey<Biome>, Holder<Biome>> out) {
+        Class<?> endRegistry;
+        try {
+            endRegistry = Class.forName("terrablender.api.EndBiomeRegistry");
+        } catch (ClassNotFoundException e) {
+            return 0;
+        }
+        int before = out.size();
+        for (String getter : new String[]{"getHighlandsBiomes", "getMidlandsBiomes", "getEdgeBiomes", "getIslandBiomes"}) {
+            try {
+                if (!(endRegistry.getMethod(getter).invoke(null) instanceof List<?> entries)) continue;
+                for (Object entry : entries) {
+                    if (entry instanceof WeightedEntry.Wrapper<?> w && w.data() instanceof ResourceKey<?> k) {
+                        ResourceKey<Biome> key = ResourceKey.create(Registries.BIOME, k.location());
+                        registry.getHolder(key).ifPresent(h -> out.putIfAbsent(key, h));
+                    }
+                }
+            } catch (Throwable t) {
+                Isleweaver.LOGGER.warn("[Isleweaver] TerraBlender End biome read failed at {}", getter, t);
+            }
+        }
+        return out.size() - before;
+    }
+
+    private static final ResourceKey<Registry<Object>> LITHOSTITCHED_INJECTORS =
+            ResourceKey.createRegistryKey(ResourceLocation.fromNamespaceAndPath("lithostitched", "biome_injector"));
+
+    // the Beyond source is in #lithostitched:cannot_inject_into, so End injector biomes join the pool (targets skipped)
+    private static int collectFromLithostitched(RegistryAccess access, Map<ResourceKey<Biome>, Holder<Biome>> out) {
+        Optional<Registry<Object>> injectors = access.registry(LITHOSTITCHED_INJECTORS);
+        if (injectors.isEmpty()) return 0;
+        int before = out.size();
+        for (Object injector : injectors.get()) {
+            try {
+                if (!(injector instanceof Record record)
+                        || !LevelStem.END.equals(record.getClass().getMethod("dimension").invoke(record))) continue;
+                for (RecordComponent component : record.getClass().getRecordComponents()) {
+                    Object value = component.getAccessor().invoke(record);
+                    if (value instanceof Climate.ParameterList<?> points) {
+                        for (Pair<Climate.ParameterPoint, ?> point : points.values()) addBiome(point.getSecond(), out);
+                    } else {
+                        addBiome(value, out);
+                    }
+                }
+            } catch (Throwable t) {
+                Isleweaver.LOGGER.warn("[Isleweaver] Lithostitched biome injector read failed for {}",
+                        injector.getClass().getName(), t);
+            }
+        }
+        return out.size() - before;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void addBiome(Object value, Map<ResourceKey<Biome>, Holder<Biome>> out) {
+        if (value instanceof Holder<?> holder && holder.isBound() && holder.value() instanceof Biome) {
+            Holder<Biome> biome = (Holder<Biome>) holder;
+            biome.unwrapKey().ifPresent(key -> out.putIfAbsent(key, biome));
+        }
+    }
+
+    // a throwaway TheEndBiomeSource lets construction mixins (Phantasm, UnusualEnd, Biolith) add their biomes
     private static void collectFromVanillaEndBiomeSource(
             RegistryAccess registryAccess,
             Registry<Biome> biomeRegistry,

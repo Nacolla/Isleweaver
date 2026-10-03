@@ -39,7 +39,7 @@ public final class BoundsPackBuilder {
                 "[Isleweaver] BoundsPackBuilder: Pack.readMetaAndCreate({}) -> {}",
                 packName, result == null ? "NULL (pack.mcmeta missing or invalid)" : "OK");
         if (result != null) {
-            // exempt this from the End dimension-json stripper; its id won't match the mod/the_beyond: prefix
+            // the End dimension filter would strip this pack, whose id lacks the mod/the_beyond prefix
             SanctionedDimensionPacks.sanction(result.getId());
         }
         return result;
