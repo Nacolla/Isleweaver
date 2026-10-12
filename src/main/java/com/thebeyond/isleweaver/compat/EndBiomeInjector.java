@@ -37,6 +37,10 @@ public final class EndBiomeInjector {
             ResourceLocation.fromNamespaceAndPath(BEYOND_NAMESPACE, "true_void"));
     private static final ResourceKey<Biome> FUMAROLE_UPLANDS = ResourceKey.create(Registries.BIOME,
             ResourceLocation.fromNamespaceAndPath(BEYOND_NAMESPACE, "fumarole_uplands"));
+    private static final ResourceKey<Biome> LUSTROUS_ECHOES = ResourceKey.create(Registries.BIOME,
+            ResourceLocation.fromNamespaceAndPath(BEYOND_NAMESPACE, "lustrous_echoes"));
+    private static final ResourceKey<Biome> CHESTRAL_HOLLOWS = ResourceKey.create(Registries.BIOME,
+            ResourceLocation.fromNamespaceAndPath(BEYOND_NAMESPACE, "chestral_hollows"));
     private static final ResourceKey<Biome> ENDERSCAPE_VOID_DEPTHS = ResourceKey.create(Registries.BIOME,
             ResourceLocation.fromNamespaceAndPath("enderscape", "void_depths"));
 
@@ -51,15 +55,20 @@ public final class EndBiomeInjector {
         public final Holder<Biome> trueVoid;
         public final Holder<Biome> thePaths;
         public final Holder<Biome> fumaroleUplands;
+        public final Holder<Biome> lustrousEchoes;
+        public final Holder<Biome> chestralHollows;
 
         public VanillaEndHolders(Holder<Biome> attractaExpanse, Holder<Biome> peerLands,
                                   Holder<Biome> trueVoid, Holder<Biome> thePaths,
-                                  Holder<Biome> fumaroleUplands) {
+                                  Holder<Biome> fumaroleUplands, Holder<Biome> lustrousEchoes,
+                                  Holder<Biome> chestralHollows) {
             this.attractaExpanse = attractaExpanse;
             this.peerLands = peerLands;
             this.trueVoid = trueVoid;
             this.thePaths = thePaths;
             this.fumaroleUplands = fumaroleUplands;
+            this.lustrousEchoes = lustrousEchoes;
+            this.chestralHollows = chestralHollows;
         }
     }
 
@@ -95,8 +104,8 @@ public final class EndBiomeInjector {
         List<Pair<Climate.ParameterPoint, Holder<Biome>>> merged = new ArrayList<>(paramList.values());
 
         int added = 0;
-        added += splitBox(merged, biomeRegistry, Biomes.END_HIGHLANDS, FUMAROLE_UPLANDS, ATTRACTA_EXPANSE);
-        added += splitBox(merged, biomeRegistry, Biomes.END_MIDLANDS, PEER_LANDS);
+        added += splitBox(merged, biomeRegistry, Biomes.END_HIGHLANDS, FUMAROLE_UPLANDS, ATTRACTA_EXPANSE, LUSTROUS_ECHOES);
+        added += splitBox(merged, biomeRegistry, Biomes.END_MIDLANDS, PEER_LANDS, CHESTRAL_HOLLOWS);
         added += splitBox(merged, biomeRegistry, Biomes.SMALL_END_ISLANDS, TRUE_VOID);
         added += splitBox(merged, biomeRegistry, ENDERSCAPE_VOID_DEPTHS, THE_PATHS);
 
@@ -123,13 +132,16 @@ public final class EndBiomeInjector {
         Holder<Biome> trueV = biomeRegistry.getHolder(TRUE_VOID).orElse(null);
         Holder<Biome> paths = biomeRegistry.getHolder(THE_PATHS).orElse(null);
         Holder<Biome> fumarole = biomeRegistry.getHolder(FUMAROLE_UPLANDS).orElse(null);
+        Holder<Biome> lustrous = biomeRegistry.getHolder(LUSTROUS_ECHOES).orElse(null);
+        Holder<Biome> chestral = biomeRegistry.getHolder(CHESTRAL_HOLLOWS).orElse(null);
 
-        if (attracta == null && peer == null && trueV == null && paths == null && fumarole == null) {
+        if (attracta == null && peer == null && trueV == null && paths == null && fumarole == null
+                && lustrous == null && chestral == null) {
             Isleweaver.LOGGER.warn("[Isleweaver] No Beyond biomes found in registry, skipping vanilla End setup");
             return;
         }
 
-        vanillaEndHolders = new VanillaEndHolders(attracta, peer, trueV, paths, fumarole);
+        vanillaEndHolders = new VanillaEndHolders(attracta, peer, trueV, paths, fumarole, lustrous, chestral);
 
         // keep the possibleBiomes cache in sync so /locate can find these
         Set<Holder<Biome>> allBiomes = new HashSet<>(biomeSource.possibleBiomes());
@@ -138,6 +150,8 @@ public final class EndBiomeInjector {
         if (trueV != null) allBiomes.add(trueV);
         if (paths != null) allBiomes.add(paths);
         if (fumarole != null) allBiomes.add(fumarole);
+        if (lustrous != null) allBiomes.add(lustrous);
+        if (chestral != null) allBiomes.add(chestral);
         ImmutableSet<Holder<Biome>> finalBiomes = ImmutableSet.copyOf(allBiomes);
         biomeSource.possibleBiomes = Suppliers.memoize(() -> finalBiomes);
 

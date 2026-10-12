@@ -44,8 +44,10 @@ public class TheEndBiomeSourceMixin {
                 new DensityFunction.SinglePointContext(j1, 0, k1));
 
         if (original.is(Biomes.END_HIGHLANDS)) {
-            if (erosion >= 0.35 && erosion < 0.5 && holders.attractaExpanse != null) {
+            if (erosion >= 0.35 && erosion < 0.425 && holders.attractaExpanse != null) {
                 cir.setReturnValue(holders.attractaExpanse);
+            } else if (erosion >= 0.425 && erosion < 0.5 && holders.lustrousEchoes != null) {
+                cir.setReturnValue(holders.lustrousEchoes);
             } else if (erosion >= 0.5 && holders.peerLands != null) {
                 cir.setReturnValue(holders.peerLands);
             }
@@ -58,7 +60,9 @@ public class TheEndBiomeSourceMixin {
                 cir.setReturnValue(holders.thePaths);
             }
         } else if (original.is(Biomes.END_MIDLANDS)) {
-            if (holders.fumaroleUplands != null) {
+            if (erosion < 0.09375 && holders.chestralHollows != null) {
+                cir.setReturnValue(holders.chestralHollows);
+            } else if (holders.fumaroleUplands != null) {
                 cir.setReturnValue(holders.fumaroleUplands);
             }
         }
