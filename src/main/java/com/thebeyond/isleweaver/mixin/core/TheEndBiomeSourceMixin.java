@@ -37,33 +37,28 @@ public class TheEndBiomeSourceMixin {
         int sectionZ = SectionPos.blockToSectionCoord(blockZ);
         if ((long) sectionX * (long) sectionX + (long) sectionZ * (long) sectionZ <= 4096L) return;
 
-        // sample erosion at the exact point vanilla samples, so our ranges line up with its biomes
-        int j1 = (sectionX * 2 + 1) * 8;
-        int k1 = (sectionZ * 2 + 1) * 8;
-        double erosion = sampler.erosion().compute(
-                new DensityFunction.SinglePointContext(j1, 0, k1));
+        boolean vanillaLand = original.is(Biomes.END_HIGHLANDS) || original.is(Biomes.END_MIDLANDS) || original.is(Biomes.END_BARRENS);
+        boolean vanillaIslets = original.is(Biomes.SMALL_END_ISLANDS);
+        if (!vanillaLand && !vanillaIslets) return;
 
-        if (original.is(Biomes.END_HIGHLANDS)) {
-            if (erosion >= 0.35 && erosion < 0.425 && holders.attractaExpanse != null) {
-                cir.setReturnValue(holders.attractaExpanse);
-            } else if (erosion >= 0.425 && erosion < 0.5 && holders.lustrousEchoes != null) {
-                cir.setReturnValue(holders.lustrousEchoes);
-            } else if (erosion >= 0.5 && holders.peerLands != null) {
-                cir.setReturnValue(holders.peerLands);
-            }
-        } else if (original.is(Biomes.SMALL_END_ISLANDS)) {
+        if (QuartPos.toBlock(y) < holders.bottomLayerTop && holders.thePaths != null) {
+            cir.setReturnValue(holders.thePaths);
+            return;
+        }
+
+        if (vanillaIslets) {
+            // sample erosion at the exact point vanilla samples, so our ranges line up with its biomes
+            int j1 = (sectionX * 2 + 1) * 8;
+            int k1 = (sectionZ * 2 + 1) * 8;
+            double erosion = sampler.erosion().compute(
+                    new DensityFunction.SinglePointContext(j1, 0, k1));
             if (erosion < -0.35 && holders.trueVoid != null) {
                 cir.setReturnValue(holders.trueVoid);
             }
-        } else if (original.is(Biomes.END_BARRENS)) {
-            if (erosion < -0.1 && holders.thePaths != null) {
-                cir.setReturnValue(holders.thePaths);
-            }
-        } else if (original.is(Biomes.END_MIDLANDS)) {
-            if (erosion < 0.09375 && holders.chestralHollows != null) {
-                cir.setReturnValue(holders.chestralHollows);
-            } else if (holders.fumaroleUplands != null) {
-                cir.setReturnValue(holders.fumaroleUplands);
+        } else {
+            Holder<Biome> zone = holders.zoneAt(blockX, blockZ);
+            if (zone != null) {
+                cir.setReturnValue(zone);
             }
         }
     }

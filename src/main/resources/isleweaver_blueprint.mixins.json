@@ -4,7 +4,8 @@
   "compatibilityLevel": "JAVA_21",
   "refmap": "isleweaver.refmap.json",
   "mixins": [
-    "ModdedBiomeSlicesManagerMixin"
+    "ModdedBiomeSlicesManagerMixin",
+    "ScopedDensityFunctionContextMixin"
   ],
   "server": [],
   "injectors": {

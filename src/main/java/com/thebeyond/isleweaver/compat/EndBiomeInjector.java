@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableSet;
 import com.mojang.datafixers.util.Either;
 import com.mojang.datafixers.util.Pair;
 import com.thebeyond.isleweaver.Isleweaver;
+import com.thebeyond.util.VoronoiNoise;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.RegistryAccess;
@@ -12,6 +13,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.level.biome.BiomeSource;
@@ -26,6 +28,16 @@ import java.util.*;
 public final class EndBiomeInjector {
 
     private static final String BEYOND_NAMESPACE = "the_beyond";
+    private static final int BOTTOM_LAYER_HEIGHT = 10;
+    private static final List<ResourceLocation> END_TAGS = List.of(
+            ResourceLocation.withDefaultNamespace("is_end"),
+            ResourceLocation.fromNamespaceAndPath("c", "is_end"));
+    private static final List<ResourceKey<Biome>> LAND_ZONES = List.of(
+            ResourceKey.create(Registries.BIOME, ResourceLocation.fromNamespaceAndPath(BEYOND_NAMESPACE, "fumarole_uplands")),
+            ResourceKey.create(Registries.BIOME, ResourceLocation.fromNamespaceAndPath(BEYOND_NAMESPACE, "attracta_expanse")),
+            ResourceKey.create(Registries.BIOME, ResourceLocation.fromNamespaceAndPath(BEYOND_NAMESPACE, "peer_lands")),
+            ResourceKey.create(Registries.BIOME, ResourceLocation.fromNamespaceAndPath(BEYOND_NAMESPACE, "lustrous_echoes")),
+            ResourceKey.create(Registries.BIOME, ResourceLocation.fromNamespaceAndPath(BEYOND_NAMESPACE, "chestral_hollows")));
 
     private static final ResourceKey<Biome> ATTRACTA_EXPANSE = ResourceKey.create(Registries.BIOME,
             ResourceLocation.fromNamespaceAndPath(BEYOND_NAMESPACE, "attracta_expanse"));
@@ -50,25 +62,26 @@ public final class EndBiomeInjector {
     private EndBiomeInjector() {}
 
     public static class VanillaEndHolders {
-        public final Holder<Biome> attractaExpanse;
-        public final Holder<Biome> peerLands;
+        private static final double ZONE_SIZE = 320.0;
+
         public final Holder<Biome> trueVoid;
         public final Holder<Biome> thePaths;
-        public final Holder<Biome> fumaroleUplands;
-        public final Holder<Biome> lustrousEchoes;
-        public final Holder<Biome> chestralHollows;
+        public final int bottomLayerTop;
+        private final List<Holder<Biome>> zones;
+        private final VoronoiNoise zoneNoise;
 
-        public VanillaEndHolders(Holder<Biome> attractaExpanse, Holder<Biome> peerLands,
-                                  Holder<Biome> trueVoid, Holder<Biome> thePaths,
-                                  Holder<Biome> fumaroleUplands, Holder<Biome> lustrousEchoes,
-                                  Holder<Biome> chestralHollows) {
-            this.attractaExpanse = attractaExpanse;
-            this.peerLands = peerLands;
+        public VanillaEndHolders(Holder<Biome> trueVoid, Holder<Biome> thePaths, int bottomLayerTop,
+                                  List<Holder<Biome>> zones, long seed) {
             this.trueVoid = trueVoid;
             this.thePaths = thePaths;
-            this.fumaroleUplands = fumaroleUplands;
-            this.lustrousEchoes = lustrousEchoes;
-            this.chestralHollows = chestralHollows;
+            this.bottomLayerTop = bottomLayerTop;
+            this.zones = zones;
+            this.zoneNoise = new VoronoiNoise(seed, (short) 0);
+        }
+
+        public Holder<Biome> zoneAt(int blockX, int blockZ) {
+            long id = zoneNoise.getCell(blockX, blockZ, 1.0 / ZONE_SIZE).cellId();
+            return zones.get((int) Math.floorMod((id * 0x9E3779B97F4A7C15L) >>> 33, (long) zones.size()));
         }
     }
 
@@ -87,7 +100,8 @@ public final class EndBiomeInjector {
         if (biomeSource instanceof MultiNoiseBiomeSource multiNoise) {
             injectIntoMultiNoise(multiNoise, registryAccess);
         } else if (biomeSource instanceof TheEndBiomeSource) {
-            setupVanillaEnd(biomeSource, registryAccess);
+            setupVanillaEnd(biomeSource, registryAccess, endStem.type().value().minY() + BOTTOM_LAYER_HEIGHT,
+                    server.getWorldData().worldGenOptions().seed());
         } else {
             Isleweaver.LOGGER.debug("[Isleweaver] End biome source is {} (unhandled type), skipping injection",
                     biomeSource.getClass().getSimpleName());
@@ -124,38 +138,51 @@ public final class EndBiomeInjector {
     }
 
     // stages the holders only, TheEndBiomeSourceMixin does the replacement
-    private static void setupVanillaEnd(BiomeSource biomeSource, RegistryAccess registryAccess) {
+    private static void setupVanillaEnd(BiomeSource biomeSource, RegistryAccess registryAccess, int bottomLayerTop, long seed) {
         Registry<Biome> biomeRegistry = registryAccess.registryOrThrow(Registries.BIOME);
 
-        Holder<Biome> attracta = biomeRegistry.getHolder(ATTRACTA_EXPANSE).orElse(null);
-        Holder<Biome> peer = biomeRegistry.getHolder(PEER_LANDS).orElse(null);
         Holder<Biome> trueV = biomeRegistry.getHolder(TRUE_VOID).orElse(null);
         Holder<Biome> paths = biomeRegistry.getHolder(THE_PATHS).orElse(null);
-        Holder<Biome> fumarole = biomeRegistry.getHolder(FUMAROLE_UPLANDS).orElse(null);
-        Holder<Biome> lustrous = biomeRegistry.getHolder(LUSTROUS_ECHOES).orElse(null);
-        Holder<Biome> chestral = biomeRegistry.getHolder(CHESTRAL_HOLLOWS).orElse(null);
+        List<Holder<Biome>> beyondZones = new ArrayList<>();
+        for (ResourceKey<Biome> key : LAND_ZONES) biomeRegistry.getHolder(key).ifPresent(beyondZones::add);
+        Set<String> otherProviders = foreignEndNamespaces(biomeRegistry, biomeSource);
 
-        if (attracta == null && peer == null && trueV == null && paths == null && fumarole == null
-                && lustrous == null && chestral == null) {
+        if (beyondZones.isEmpty() && trueV == null && paths == null) {
             Isleweaver.LOGGER.warn("[Isleweaver] No Beyond biomes found in registry, skipping vanilla End setup");
             return;
         }
 
-        vanillaEndHolders = new VanillaEndHolders(attracta, peer, trueV, paths, fumarole, lustrous, chestral);
+        List<Holder<Biome>> zones = new ArrayList<>();
+        for (int i = Math.max(1, beyondZones.size() * otherProviders.size()); i > 0; i--) zones.add(null);
+        zones.addAll(beyondZones);
+        vanillaEndHolders = new VanillaEndHolders(trueV, paths, bottomLayerTop, zones, seed);
+        Isleweaver.LOGGER.debug("[Isleweaver] Vanilla End land shared with {} other biome provider(s) {}, {} of {} zones left vanilla",
+                otherProviders.size(), otherProviders, zones.size() - beyondZones.size(), zones.size());
 
         // keep the possibleBiomes cache in sync so /locate can find these
         Set<Holder<Biome>> allBiomes = new HashSet<>(biomeSource.possibleBiomes());
-        if (attracta != null) allBiomes.add(attracta);
-        if (peer != null) allBiomes.add(peer);
+        for (Holder<Biome> zone : zones) if (zone != null) allBiomes.add(zone);
         if (trueV != null) allBiomes.add(trueV);
         if (paths != null) allBiomes.add(paths);
-        if (fumarole != null) allBiomes.add(fumarole);
-        if (lustrous != null) allBiomes.add(lustrous);
-        if (chestral != null) allBiomes.add(chestral);
         ImmutableSet<Holder<Biome>> finalBiomes = ImmutableSet.copyOf(allBiomes);
         biomeSource.possibleBiomes = Suppliers.memoize(() -> finalBiomes);
 
         Isleweaver.LOGGER.debug("[Isleweaver] Set up vanilla End biome injection (TheEndBiomeSourceMixin active)");
+    }
+
+    private static Set<String> foreignEndNamespaces(Registry<Biome> registry, BiomeSource source) {
+        Set<String> namespaces = new TreeSet<>();
+        for (ResourceLocation tag : END_TAGS) {
+            registry.getTag(TagKey.create(Registries.BIOME, tag)).ifPresent(set -> set.forEach(h -> addForeign(namespaces, h)));
+        }
+        source.possibleBiomes().forEach(h -> addForeign(namespaces, h));
+        return namespaces;
+    }
+
+    private static void addForeign(Set<String> out, Holder<Biome> biome) {
+        biome.unwrapKey().map(k -> k.location().getNamespace())
+                .filter(ns -> !ns.equals("minecraft") && !ns.equals(BEYOND_NAMESPACE))
+                .ifPresent(out::add);
     }
 
     // continentalness bands spread each Beyond biome over separate islands, a depth split would stack them
