@@ -29,7 +29,7 @@ public abstract class ZetaGeneratorGetBiomeMixin {
             LevelAccessor world, BlockPos pos, boolean offset,
             CallbackInfoReturnable<Holder<Biome>> cir) {
 
-        if (!offset) return; // the offset=false path is already correct
+        if (!offset) return;
 
         // there's no DimensionType.isEnd(), so detect the End by ruling out Overworld (natural) and Nether (ceiling/ultraWarm)
         DimensionType dim = world.dimensionType();

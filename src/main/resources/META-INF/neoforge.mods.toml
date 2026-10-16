@@ -22,6 +22,12 @@ config = "isleweaver_blueprint.mixins.json"
 config = "isleweaver_core.mixins.json"
 [[mixins]]
 config = "isleweaver_mes.mixins.json"
+[[mixins]]
+config = "isleweaver_betterend.mixins.json"
+[[mixins]]
+config = "isleweaver_wover.mixins.json"
+[[mixins]]
+config = "isleweaver_bclib.mixins.json"
 
 [[mods]]
 modId="${mod_id}"
@@ -61,6 +67,27 @@ side="BOTH"
 
 [[dependencies.${mod_id}]]
 modId="astrological"
+type="optional"
+versionRange="*"
+ordering="BEFORE"
+side="BOTH"
+
+[[dependencies.${mod_id}]]
+modId="betterend"
+type="optional"
+versionRange="*"
+ordering="BEFORE"
+side="BOTH"
+
+[[dependencies.${mod_id}]]
+modId="wover"
+type="optional"
+versionRange="*"
+ordering="BEFORE"
+side="BOTH"
+
+[[dependencies.${mod_id}]]
+modId="bclib"
 type="optional"
 versionRange="*"
 ordering="BEFORE"

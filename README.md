@@ -34,7 +34,7 @@ The Beyond's API is resolved from CurseForge through CurseMaven, so building is 
 ./gradlew runClient  # launch with both mods
 ```
 
-MC 1.21.1 · NeoForge 21.1.200 · mod id `isleweaver` · MIT. `the_beyond_version` in `gradle.properties` pins the API artifact.
+MC 1.21.1 · NeoForge 21.1.200 · mod id `isleweaver` · MIT. The CurseMaven file id in `build.gradle` pins the API artifact, and `the_beyond_version` in `gradle.properties` is the lowest Beyond the mod accepts.
 
 ## License
 

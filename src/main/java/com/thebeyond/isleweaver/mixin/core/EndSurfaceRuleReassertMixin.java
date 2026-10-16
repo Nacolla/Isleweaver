@@ -44,7 +44,7 @@ public abstract class EndSurfaceRuleReassertMixin {
         NoiseGeneratorSettings settings = noiseGen.generatorSettings().value();
         NoiseGeneratorSettingsAccessor accessor = (NoiseGeneratorSettingsAccessor) (Object) settings;
         SurfaceRules.RuleSource active = accessor.isleweaver$getSurfaceRule();
-        if (active == beyondRule) return; // nothing prepended after the merge
+        if (active == beyondRule) return;
 
         // foreign per-biome clauses keep their skin, the globals that would re-skin Beyond islands go
         java.util.List<SurfaceRules.RuleSource> foreignBiome =

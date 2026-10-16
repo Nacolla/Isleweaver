@@ -12,6 +12,8 @@ import org.slf4j.Logger;
 public final class Isleweaver {
     public static final String MODID = "isleweaver";
     public static final Logger LOGGER = LogUtils.getLogger();
+    // per-structure worldgen traces, off so they never reach players' logs
+    public static boolean TRACE = false;
 
     public Isleweaver(IEventBus modEventBus, ModContainer modContainer) {
         // has to bind before any End biome source is built, so do it here at mod-construct rather than in common setup

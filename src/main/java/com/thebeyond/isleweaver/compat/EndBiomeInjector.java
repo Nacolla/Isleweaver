@@ -7,8 +7,10 @@ import com.mojang.datafixers.util.Pair;
 import com.thebeyond.isleweaver.Isleweaver;
 import com.thebeyond.util.VoronoiNoise;
 import net.minecraft.core.Holder;
+import net.minecraft.core.QuartPos;
 import net.minecraft.core.Registry;
 import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.SectionPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -21,6 +23,12 @@ import net.minecraft.world.level.biome.Climate;
 import net.minecraft.world.level.biome.MultiNoiseBiomeSource;
 import net.minecraft.world.level.biome.TheEndBiomeSource;
 import net.minecraft.world.level.dimension.LevelStem;
+import net.minecraft.world.level.levelgen.DensityFunction;
+import net.neoforged.fml.ModList;
+import net.neoforged.neoforgespi.language.IModFileInfo;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import java.util.*;
 
@@ -63,26 +71,94 @@ public final class EndBiomeInjector {
 
     public static class VanillaEndHolders {
         private static final double ZONE_SIZE = 320.0;
+        private static final int SAMPLE_REACH = 2048;
+        private static final int SAMPLE_STEP = 64;
 
         public final Holder<Biome> trueVoid;
         public final Holder<Biome> thePaths;
         public final int bottomLayerTop;
-        private final List<Holder<Biome>> zones;
+        private final List<Holder<Biome>> beyondZones;
+        private volatile List<Holder<Biome>> zones;
+        private volatile boolean observed;
+        private volatile Thread observer;
         private final VoronoiNoise zoneNoise;
 
         public VanillaEndHolders(Holder<Biome> trueVoid, Holder<Biome> thePaths, int bottomLayerTop,
-                                  List<Holder<Biome>> zones, long seed) {
+                                  List<Holder<Biome>> beyondZones, int providers, long seed) {
             this.trueVoid = trueVoid;
             this.thePaths = thePaths;
             this.bottomLayerTop = bottomLayerTop;
-            this.zones = zones;
+            this.beyondZones = beyondZones;
+            this.zones = shares(beyondZones, providers);
             this.zoneNoise = new VoronoiNoise(seed, (short) 0);
         }
 
-        public Holder<Biome> zoneAt(int blockX, int blockZ) {
-            long id = zoneNoise.getCell(blockX, blockZ, 1.0 / ZONE_SIZE).cellId();
-            return zones.get((int) Math.floorMod((id * 0x9E3779B97F4A7C15L) >>> 33, (long) zones.size()));
+        public boolean observing() {
+            return observer == Thread.currentThread();
         }
+
+        public void observe(TheEndBiomeSource source, Climate.Sampler sampler) {
+            if (observed) return;
+            synchronized (this) {
+                if (observed) return;
+                observer = Thread.currentThread();
+                try {
+                    Set<String> providers = landProviders(source, sampler);
+                    zones = shares(beyondZones, providers.size());
+                    Isleweaver.LOGGER.debug("[Isleweaver] Vanilla End land observed with {} other biome provider(s) {}, {} of {} zones left to them",
+                            providers.size(), providers, zones.size() - beyondZones.size(), zones.size());
+                } catch (Throwable t) {
+                    Isleweaver.LOGGER.warn("[Isleweaver] Vanilla End land observation failed, keeping the tag estimate", t);
+                } finally {
+                    observer = null;
+                    observed = true;
+                }
+            }
+        }
+
+        private static Set<String> landProviders(TheEndBiomeSource source, Climate.Sampler sampler) {
+            Set<String> providers = new TreeSet<>();
+            Map<String, String> owners = new HashMap<>();
+            int qy = QuartPos.fromBlock(64);
+            for (int qx = -SAMPLE_REACH; qx <= SAMPLE_REACH; qx += SAMPLE_STEP) {
+                for (int qz = -SAMPLE_REACH; qz <= SAMPLE_REACH; qz += SAMPLE_STEP) {
+                    int sectionX = SectionPos.blockToSectionCoord(QuartPos.toBlock(qx));
+                    int sectionZ = SectionPos.blockToSectionCoord(QuartPos.toBlock(qz));
+                    if ((long) sectionX * sectionX + (long) sectionZ * sectionZ <= 4096L) continue;
+                    double erosion = sampler.erosion().compute(new DensityFunction.SinglePointContext(
+                            (sectionX * 2 + 1) * 8, QuartPos.toBlock(qy), (sectionZ * 2 + 1) * 8));
+                    if (erosion < -0.21875) continue;
+                    source.getNoiseBiome(qx, qy, qz, sampler).unwrapKey()
+                            .map(key -> key.location().getNamespace())
+                            .filter(ns -> !ns.equals("minecraft") && !ns.equals(BEYOND_NAMESPACE))
+                            .ifPresent(ns -> providers.add(owners.computeIfAbsent(ns, EndBiomeInjector::owner)));
+                }
+            }
+            return providers;
+        }
+
+        public Holder<Biome> zoneAt(int blockX, int blockZ) {
+            List<Holder<Biome>> current = zones;
+            long id = zoneNoise.getCell(blockX, blockZ, 1.0 / ZONE_SIZE).cellId();
+            return current.get((int) Math.floorMod((id * 0x9E3779B97F4A7C15L) >>> 33, (long) current.size()));
+        }
+    }
+
+    private static List<Holder<Biome>> shares(List<Holder<Biome>> beyondZones, int providers) {
+        List<Holder<Biome>> zones = new ArrayList<>();
+        for (int i = Math.max(1, beyondZones.size() * providers); i > 0; i--) zones.add(null);
+        zones.addAll(beyondZones);
+        return zones;
+    }
+
+    private static String owner(String namespace) {
+        IModFileInfo own = ModList.get().getModFileById(namespace);
+        if (own != null) return own.getFile().getFilePath().getFileName().toString();
+        for (IModFileInfo info : ModList.get().getModFiles()) {
+            Path biomes = info.getFile().findResource("data", namespace, "worldgen", "biome");
+            if (biomes != null && Files.isDirectory(biomes)) return info.getFile().getFilePath().getFileName().toString();
+        }
+        return namespace;
     }
 
     public static void injectBiomes(MinecraftServer server) {
@@ -152,16 +228,13 @@ public final class EndBiomeInjector {
             return;
         }
 
-        List<Holder<Biome>> zones = new ArrayList<>();
-        for (int i = Math.max(1, beyondZones.size() * otherProviders.size()); i > 0; i--) zones.add(null);
-        zones.addAll(beyondZones);
-        vanillaEndHolders = new VanillaEndHolders(trueV, paths, bottomLayerTop, zones, seed);
-        Isleweaver.LOGGER.debug("[Isleweaver] Vanilla End land shared with {} other biome provider(s) {}, {} of {} zones left vanilla",
-                otherProviders.size(), otherProviders, zones.size() - beyondZones.size(), zones.size());
+        vanillaEndHolders = new VanillaEndHolders(trueV, paths, bottomLayerTop, beyondZones, otherProviders.size(), seed);
+        Isleweaver.LOGGER.debug("[Isleweaver] Vanilla End land estimated from tags for {} other biome provider(s) {}, observed at the first land query",
+                otherProviders.size(), otherProviders);
 
         // keep the possibleBiomes cache in sync so /locate can find these
         Set<Holder<Biome>> allBiomes = new HashSet<>(biomeSource.possibleBiomes());
-        for (Holder<Biome> zone : zones) if (zone != null) allBiomes.add(zone);
+        allBiomes.addAll(beyondZones);
         if (trueV != null) allBiomes.add(trueV);
         if (paths != null) allBiomes.add(paths);
         ImmutableSet<Holder<Biome>> finalBiomes = ImmutableSet.copyOf(allBiomes);
@@ -182,6 +255,7 @@ public final class EndBiomeInjector {
     private static void addForeign(Set<String> out, Holder<Biome> biome) {
         biome.unwrapKey().map(k -> k.location().getNamespace())
                 .filter(ns -> !ns.equals("minecraft") && !ns.equals(BEYOND_NAMESPACE))
+                .map(EndBiomeInjector::owner)
                 .ifPresent(out::add);
     }
 

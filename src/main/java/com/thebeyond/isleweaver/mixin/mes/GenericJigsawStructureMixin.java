@@ -94,7 +94,7 @@ public abstract class GenericJigsawStructureMixin implements MesHostedStructure 
                 if (pancakeTop == Integer.MIN_VALUE) {
                     the_beyond$hosted.set(Boolean.FALSE);
                     cir.setReturnValue(Optional.empty());
-                    if (the_beyond$loggedFallback.add("no-pancake@" + key + "@" + context.chunkPos().x + "," + context.chunkPos().z)
+                    if (Isleweaver.TRACE && the_beyond$loggedFallback.add("no-pancake@" + key + "@" + context.chunkPos().x + "," + context.chunkPos().z)
                             && the_beyond$loggedFallback.size() <= 40) {
                         Isleweaver.LOGGER.debug("[Isleweaver][MES] {} REJECTED: no pancake with enough footprint coverage (would float) chunk=[{},{}]",
                                 key, context.chunkPos().x, context.chunkPos().z);
@@ -108,7 +108,7 @@ public abstract class GenericJigsawStructureMixin implements MesHostedStructure 
                 if (seat[1] < need) {
                     the_beyond$hosted.set(Boolean.FALSE);
                     cir.setReturnValue(Optional.empty());
-                    if (the_beyond$loggedFallback.add("thin@" + key + "@" + context.chunkPos().x + "," + context.chunkPos().z)
+                    if (Isleweaver.TRACE && the_beyond$loggedFallback.add("thin@" + key + "@" + context.chunkPos().x + "," + context.chunkPos().z)
                             && the_beyond$loggedFallback.size() <= 40) {
                         Isleweaver.LOGGER.debug("[Isleweaver][MES] {} REJECTED: hull footprint [{},{}..{},{}] covers only {}% of one layer (needs {}%) chunk=[{},{}]",
                                 key, plan.minX(), plan.minZ(), plan.maxX(), plan.maxZ(), seat[1], need,
@@ -145,7 +145,7 @@ public abstract class GenericJigsawStructureMixin implements MesHostedStructure 
             int from = pieces.get(0).getBoundingBox().minY();
             BoundingBox real = the_beyond$hullFootprint(pieces);
             BoundingBox pred = the_beyond$predictedFootprint(context);
-            if (real != null && the_beyond$logged.add("plan@" + key)) {
+            if (real != null && Isleweaver.TRACE && the_beyond$logged.add("plan@" + key)) {
                 boolean fits = pred.minX() <= real.minX() && pred.maxX() >= real.maxX()
                         && pred.minZ() <= real.minZ() && pred.maxZ() >= real.maxZ();
                 Isleweaver.LOGGER.debug("[Isleweaver][MES] {} footprint predicted=[{},{}..{},{}] real=[{},{}..{},{}] covers={}",
@@ -156,7 +156,6 @@ public abstract class GenericJigsawStructureMixin implements MesHostedStructure 
             int[] seat = the_beyond$seatUnderHull(pieces, anchor);
             int layerTop = seat[0], cover = seat[1], thick = seat[2];
             int want = IsleweaverConfig.MEGASHIP_SINK_DEPTH.get();
-            // A hull sunk deeper than its layer is thick comes out the bottom, so the layer caps the sink.
             int sink = Math.max(0, Math.min(want, thick - the_beyond$KEEL_MARGIN));
             // MES's absent max_y_allowed reads as MAX_VALUE, so only the world limits can clamp here
             int to = Math.max(context.heightAccessor().getMinBuildHeight(),
@@ -171,7 +170,7 @@ public abstract class GenericJigsawStructureMixin implements MesHostedStructure 
                 return;
             }
             for (PoolElementStructurePiece p : pieces) p.move(0, dy, 0);
-            if (the_beyond$loggedDistributed.add("resink@" + key + "@" + context.chunkPos().x + "," + context.chunkPos().z)
+            if (Isleweaver.TRACE && the_beyond$loggedDistributed.add("resink@" + key + "@" + context.chunkPos().x + "," + context.chunkPos().z)
                     && the_beyond$loggedDistributed.size() <= 40) {
                 Isleweaver.LOGGER.debug("[Isleweaver][MES] {} EMBEDDED re-sunk after burying: {} -> {} (dy={} layerTop={} cover={}% thick={} sink={}/{} pancakeTop={} anchor={}) chunk=[{},{}]",
                         key, from, to, dy, layerTop, cover, thick, sink, want, pancakeTop, anchor,
@@ -319,7 +318,6 @@ public abstract class GenericJigsawStructureMixin implements MesHostedStructure 
                 Structure self = (Structure) (Object) this;
                 ResourceLocation key = the_beyond$structureKey(context, self);
                 boolean embedded = key != null && BeyondForeignStructureProfiles.isEmbedded(key);
-                // An embedded hull declares NONE and still wants the ground, so it has to reach the sink below.
                 if ((embedded || self.terrainAdaptation() != TerrainAdjustment.NONE)
                         && context.chunkGenerator() instanceof BeyondEndChunkGenerator beg) {
                     // MES re-roots the start piece at the chunk-min corner, so support and biome are checked there
@@ -330,7 +328,7 @@ public abstract class GenericJigsawStructureMixin implements MesHostedStructure 
                             int sunkY = Math.max(minY, Math.min(maxY, pancakeTop - IsleweaverConfig.MEGASHIP_SINK_DEPTH.get()));
                             placeAt = new BlockPos(startPos.getX(), sunkY, startPos.getZ());
                             heightmap = Optional.empty();
-                            if (the_beyond$loggedDistributed.add("sink@" + key + "@" + context.chunkPos().x + "," + context.chunkPos().z)
+                            if (Isleweaver.TRACE && the_beyond$loggedDistributed.add("sink@" + key + "@" + context.chunkPos().x + "," + context.chunkPos().z)
                                     && the_beyond$loggedDistributed.size() <= 40) {
                                 Isleweaver.LOGGER.debug("[Isleweaver][MES] {} EMBEDDED sunk -> Y={} (pancakeTop={} depth={}) chunk=[{},{}]",
                                         key, sunkY, pancakeTop, IsleweaverConfig.MEGASHIP_SINK_DEPTH.get(), context.chunkPos().x, context.chunkPos().z);
@@ -349,13 +347,13 @@ public abstract class GenericJigsawStructureMixin implements MesHostedStructure 
                             placeAt = new BlockPos(startPos.getX(), picked, startPos.getZ());
                             heightmap = Optional.empty();
                             BeyondForeignStructureProfiles.markLayerDistributed(key, context.chunkPos().toLong());
-                            if (key != null && the_beyond$loggedDistributed.add(key + "@" + context.chunkPos().x + "," + context.chunkPos().z)
+                            if (Isleweaver.TRACE && key != null && the_beyond$loggedDistributed.add(key + "@" + context.chunkPos().x + "," + context.chunkPos().z)
                                     && the_beyond$loggedDistributed.size() <= 40) {
                                 Isleweaver.LOGGER.debug("[Isleweaver][MES] {} grounded -> Y={} r={} cover={}% topmostLayer={} layers={}valid/{}total chosenLayerTop={} chunk=[{},{}]",
                                         key, picked, coverR, g.coverPct(), g.topmostLayerY(), g.validLayers(), g.totalLayers(), g.chosenLayerTop(), context.chunkPos().x, context.chunkPos().z);
                             }
                         } else {
-                            if (key != null && the_beyond$loggedFallback.add("reject@" + key + "@" + context.chunkPos().x + "," + context.chunkPos().z)
+                            if (Isleweaver.TRACE && key != null && the_beyond$loggedFallback.add("reject@" + key + "@" + context.chunkPos().x + "," + context.chunkPos().z)
                                     && the_beyond$loggedFallback.size() <= 40) {
                                 Isleweaver.LOGGER.debug("[Isleweaver][MES] {} REJECTED (grounded, {}): r={} topmostLayer={} layers=0valid/{}total chunk=[{},{}]",
                                         key, picked == Integer.MIN_VALUE ? "voidy/split" : "y-allowance(" + picked + " vs " + minY + ".." + maxY + ")",
@@ -383,7 +381,7 @@ public abstract class GenericJigsawStructureMixin implements MesHostedStructure 
     private static void the_beyond$logFallback(Structure.GenerationContext context, Structure self, String reason) {
         ResourceLocation key = the_beyond$structureKey(context, self);
         String id = key == null ? "?" : key.toString();
-        if (the_beyond$loggedFallback.add(id + "@" + context.chunkPos().x + "," + context.chunkPos().z)
+        if (Isleweaver.TRACE && the_beyond$loggedFallback.add(id + "@" + context.chunkPos().x + "," + context.chunkPos().z)
                 && the_beyond$loggedFallback.size() <= 40) {
             Isleweaver.LOGGER.debug("[Isleweaver][MES] {} fallback -> topmost ({}) chunk=[{},{}]",
                     id, reason, context.chunkPos().x, context.chunkPos().z);

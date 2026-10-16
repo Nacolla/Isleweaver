@@ -13,7 +13,6 @@ version = mod_version
 group = mod_group_id
 
 repositories {
-    mavenLocal()   // locally-published Beyond (com.thebeyond:the_beyond) carrying the structure-integration API
     mavenCentral()
     maven {
         name = 'CurseMaven'
@@ -62,7 +61,7 @@ neoForge {
 }
 
 dependencies {
-    implementation "com.thebeyond:the_beyond:${the_beyond_version}"
+    implementation "curse.maven:the-beyond-658435:9149417"
 }
 
 tasks.withType(ProcessResources).configureEach {

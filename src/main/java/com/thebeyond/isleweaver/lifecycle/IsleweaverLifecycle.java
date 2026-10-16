@@ -30,10 +30,12 @@ public final class IsleweaverLifecycle {
         com.thebeyond.isleweaver.compat.mes.MoogsEndStructuresProfiles.register();
         com.thebeyond.isleweaver.compat.enderscape.EnderscapeStructureProfiles.register();
         com.thebeyond.isleweaver.compat.dungeons_and_taverns.DungeonsAndTavernsProfiles.register();
+        com.thebeyond.isleweaver.compat.wover.WoverBiomeTagRegistration.register();
     }
 
     @SubscribeEvent
     public static void onBeyondSurfaceRuleContribution(BeyondSurfaceRuleContributionEvent event) {
+        com.thebeyond.isleweaver.compat.wover.WoverSurfaceRuleContributor.onBeyondSurfaceRuleContribution(event);
         FabricEndBiomeSurfaceContributor.onBeyondSurfaceRuleContribution(event);
     }
 
@@ -63,10 +65,12 @@ public final class IsleweaverLifecycle {
         if (ModList.get().isLoaded("enderscape")) {
             PlacedFeatureRewriter.rewrite(event.getServer());
         }
+        if (ModList.get().isLoaded("betterend")) {
+            com.thebeyond.isleweaver.compat.betterend.BetterEndVegetationThrottle.apply(event.getServer());
+        }
         EndFeatureHeightmapFix.apply(event.getServer());
-        // has to run last. Collapses to a single global per-step feature order so vanilla FeatureSorter can't hit a cycle
+        // must follow every feature rewrite: one global per-step order keeps vanilla FeatureSorter from hitting a cycle
         EndFeatureOrderNormalizer.apply(event.getServer());
-        // no-op without UnusualEnd, so biomeAt() returns null and the macro overlay stays silent
         WarpedReefMacroRegion.cache(event.getServer());
     }
 

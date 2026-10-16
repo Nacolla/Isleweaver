@@ -22,6 +22,7 @@ public final class SurfaceRuleOrdering {
     private static final String TYPE = "type";
     private static final String SEQUENCE = "sequence";
     private static final String IF_TRUE = "if_true";
+    private static final String THEN_RUN = "then_run";
     private static final String BIOME_IS = "biome_is";
     private static final String SEQUENCE_TYPE = "minecraft:sequence";
     private static final String CONDITION_TYPE = "minecraft:condition";
@@ -96,11 +97,12 @@ public final class SurfaceRuleOrdering {
         return out;
     }
 
-    // a biome condition, or a sequence of biome-confined entries only. Anything else matches globally
+    // a biome test, or a condition or sequence whose rules are all biome-confined, anything else matches globally
     private static boolean isBiomeConfined(JsonElement el) {
         if (el == null || !el.isJsonObject()) return false;
         JsonObject o = el.getAsJsonObject();
         if (isBiomeGuarded(o)) return true;
+        if (CONDITION_TYPE.equals(typeOf(o))) return isBiomeConfined(o.get(THEN_RUN));
         if (SEQUENCE_TYPE.equals(typeOf(o))) {
             JsonArray seq = arrayMember(o, SEQUENCE);
             if (seq == null || seq.size() == 0) return false;
@@ -223,6 +225,16 @@ public final class SurfaceRuleOrdering {
             if (seq != null) {
                 for (JsonElement e : seq) collectBiomeClauses(e, out);
             }
+        } else if (CONDITION_TYPE.equals(typeOf(o))) {
+            List<JsonObject> inner = new ArrayList<>();
+            collectBiomeClauses(o.get(THEN_RUN), inner);
+            for (JsonObject clause : inner) {
+                JsonObject wrapped = new JsonObject();
+                wrapped.addProperty(TYPE, CONDITION_TYPE);
+                wrapped.add(IF_TRUE, o.get(IF_TRUE));
+                wrapped.add(THEN_RUN, clause);
+                out.add(wrapped);
+            }
         }
     }
 
@@ -251,6 +263,8 @@ public final class SurfaceRuleOrdering {
             JsonElement biomes = ifTrue.getAsJsonObject().get(BIOME_IS);
             if (biomes != null) return biomes.toString();
         }
+        JsonElement thenRun = clause.get(THEN_RUN);
+        if (!isBiomeGuarded(clause) && thenRun != null && thenRun.isJsonObject()) return biomeIdsOf(thenRun.getAsJsonObject());
         return "<unknown biome>";
     }
 

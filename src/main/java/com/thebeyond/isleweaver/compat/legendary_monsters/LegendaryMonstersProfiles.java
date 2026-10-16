@@ -18,7 +18,6 @@ public final class LegendaryMonstersProfiles {
 
         // the two towers stay unregistered so Beyond auto-hosts them, a SEATED profile would drop their skirt
 
-        // space_station floats in the void (none -> FLOATING): ceiling-clip rejection + carve only, no foundation.
         BeyondForeignStructureProfiles.register(
                 ResourceLocation.fromNamespaceAndPath(MOD, "space_station"),
                 StructureIntegrationProfile.builder(Anchor.FLOATING).build());

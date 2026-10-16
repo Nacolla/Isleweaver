@@ -5,6 +5,7 @@
   "refmap": "isleweaver.refmap.json",
   "mixins": [
     "BiomeGenerationSettingsAccessor",
+    "CountOnEveryLayerPlacementAccessor",
     "EndPlatformFeatureMixin",
     "EndSurfaceRuleReassertMixin",
     "NoiseGeneratorSettingsAccessor",

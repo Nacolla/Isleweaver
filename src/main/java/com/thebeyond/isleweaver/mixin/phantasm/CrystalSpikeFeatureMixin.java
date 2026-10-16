@@ -58,7 +58,7 @@ public abstract class CrystalSpikeFeatureMixin {
             resolved = original.call(level, origin);
         }
         boolean matched = resolved.is(IS_DREAMING_DEN);
-        if (the_beyond$logBudget.getAndDecrement() > 0) {
+        if (Isleweaver.TRACE && the_beyond$logBudget.getAndDecrement() > 0) {
             Isleweaver.LOGGER.debug(
                     "[Isleweaver][CrystalSpike] gate originY={} surfaceY={} matched={} (place {})",
                     origin.getY(), surfaceY, matched, matched ? "REACHED" : "BAILED");
@@ -77,7 +77,7 @@ public abstract class CrystalSpikeFeatureMixin {
         }
         int s = the_beyond$pillarStartY.get();
         int anchored = s != Integer.MIN_VALUE ? s : self.getY() - 2;
-        if (the_beyond$logBudget.get() > 0) {
+        if (Isleweaver.TRACE && the_beyond$logBudget.get() > 0) {
             Isleweaver.LOGGER.debug(
                     "[Isleweaver][CrystalSpike] pillar scan re-anchor originY={} -> startY={}", self.getY(), anchored);
         }

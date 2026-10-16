@@ -26,7 +26,7 @@ public class TheEndBiomeSourceMixin {
         if (BeyondTerrainState.isActive()) return;
 
         EndBiomeInjector.VanillaEndHolders holders = EndBiomeInjector.vanillaEndHolders;
-        if (holders == null) return;
+        if (holders == null || holders.observing()) return;
 
         Holder<Biome> original = cir.getReturnValue();
 
@@ -56,6 +56,7 @@ public class TheEndBiomeSourceMixin {
                 cir.setReturnValue(holders.trueVoid);
             }
         } else {
+            holders.observe((TheEndBiomeSource) (Object) this, sampler);
             Holder<Biome> zone = holders.zoneAt(blockX, blockZ);
             if (zone != null) {
                 cir.setReturnValue(zone);

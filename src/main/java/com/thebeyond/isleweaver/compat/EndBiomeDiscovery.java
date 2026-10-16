@@ -68,7 +68,6 @@ public final class EndBiomeDiscovery {
         int fromTerraBlender = collectFromTerraBlender(biomeRegistry, candidates);
         int fromLithostitched = collectFromLithostitched(registryAccess, candidates);
 
-        // lets other mods' scanners contribute candidates before the empty check below
         NeoForge.EVENT_BUS.post(new BeyondBiomeDiscoveryEvent(server, biomeRegistry, candidates));
 
         // run last so it also prunes anything the event added, per BoP's biome-disable config
@@ -194,15 +193,17 @@ public final class EndBiomeDiscovery {
             HolderGetter<Biome> getter = registryAccess.lookupOrThrow(Registries.BIOME);
             TheEndBiomeSource transientSource = TheEndBiomeSource.create(getter);
 
-            int before = out.size();
+            // mixins hand these over in hash order, which changes between runs, and the pool picks by position
+            List<Holder<Biome>> found = new ArrayList<>();
             for (Holder<Biome> holder : transientSource.possibleBiomes()) {
-                holder.unwrapKey().ifPresent(key -> out.putIfAbsent(key, holder));
+                holder.unwrapKey().filter(key -> !out.containsKey(key)).ifPresent(key -> found.add(holder));
             }
-            int discovered = out.size() - before;
-            if (discovered > 0) {
-                Isleweaver.LOGGER.debug(
-                        "[Isleweaver] Discovered {} biome(s) via transient TheEndBiomeSource (mods using mixin-based End injection)",
-                        discovered);
+            found.sort(Comparator.comparing(h -> h.unwrapKey().orElseThrow().location().toString()));
+            for (Holder<Biome> holder : found) out.put(holder.unwrapKey().orElseThrow(), holder);
+            if (!found.isEmpty()) {
+                Isleweaver.LOGGER.debug("[Isleweaver] Discovered {} biome(s) via transient TheEndBiomeSource "
+                                + "(mods using mixin-based End injection): {}",
+                        found.size(), found.stream().map(h -> h.unwrapKey().orElseThrow().location().toString()).toList());
             }
         } catch (Throwable t) {
             Isleweaver.LOGGER.debug("[Isleweaver] Transient TheEndBiomeSource discovery failed (non-fatal): {}",
