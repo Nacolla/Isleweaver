@@ -2,6 +2,7 @@ package com.thebeyond.isleweaver.mixin.core;
 
 import com.thebeyond.api.worldgen.BeyondEndBiomeSourceApi;
 import com.thebeyond.isleweaver.Isleweaver;
+import com.thebeyond.isleweaver.compat.NativeBodySampler;
 import com.thebeyond.isleweaver.compat.SurfaceRuleMerger;
 import com.thebeyond.isleweaver.compat.enderscape.CorruptBarrensFill;
 import net.minecraft.core.Registry;
@@ -45,26 +46,33 @@ public abstract class EndSurfaceRuleReassertMixin {
         NoiseGeneratorSettings settings = noiseGen.generatorSettings().value();
         NoiseGeneratorSettingsAccessor accessor = (NoiseGeneratorSettingsAccessor) (Object) settings;
         SurfaceRules.RuleSource active = accessor.isleweaver$getSurfaceRule();
-        if (active == beyondRule) return;
+        long seed = ((MinecraftServer) (Object) this).getWorldData().worldGenOptions().seed();
+        java.util.Set<net.minecraft.core.Holder<net.minecraft.world.level.biome.Biome>> pool =
+                endStem.generator().getBiomeSource().possibleBiomes();
 
-        // foreign per-biome clauses keep their skin, the globals that would re-skin Beyond islands go
-        java.util.List<SurfaceRules.RuleSource> foreignBiome =
-                com.thebeyond.isleweaver.compat.SurfaceRuleOrdering.foreignBiomeClausesNotIn(active, beyondRule, registryAccess());
-        SurfaceRules.RuleSource result;
-        if (foreignBiome.isEmpty()) {
-            result = beyondRule;
-        } else {
-            java.util.List<SurfaceRules.RuleSource> rules = new java.util.ArrayList<>(foreignBiome);
-            SurfaceRules.RuleSource corruptFill = CorruptBarrensFill.rule(registryAccess());
-            if (corruptFill != null) rules.add(corruptFill);
-            rules.add(beyondRule);   // foreign per-biome clauses first (win in-biome), Beyond's merge as base
-            result = SurfaceRules.sequence(rules.toArray(new SurfaceRules.RuleSource[0]));
+        java.util.List<SurfaceRules.RuleSource> rules = active == beyondRule ? new java.util.ArrayList<>()
+                : new java.util.ArrayList<>(com.thebeyond.isleweaver.compat.SurfaceRuleOrdering.foreignBiomeClausesNotIn(
+                        active, beyondRule, registryAccess()));
+        int foreignCount = rules.size();
+        rules.add(beyondRule);
+        // Beyond's rule ends without a global filler, so fills placed last reach only the blocks no rule claims
+        java.util.List<SurfaceRules.RuleSource> fills = new java.util.ArrayList<>();
+        SurfaceRules.RuleSource corruptFill = CorruptBarrensFill.rule(registryAccess());
+        if (corruptFill != null) fills.add(corruptFill);
+        try {
+            fills.addAll(NativeBodySampler.fills(registryAccess(), pool,
+                    SurfaceRules.sequence(rules.toArray(new SurfaceRules.RuleSource[0])), seed));
+        } catch (Throwable t) {
+            Isleweaver.LOGGER.warn("[Isleweaver] Native body sampling failed, no sampled fills: {}", t.toString());
         }
-        accessor.isleweaver$setSurfaceRule(result);
+        rules.addAll(fills);
+        if (rules.size() == 1 && active == beyondRule) return;
+        accessor.isleweaver$setSurfaceRule(rules.size() == 1 ? beyondRule
+                : SurfaceRules.sequence(rules.toArray(new SurfaceRules.RuleSource[0])));
         Isleweaver.LOGGER.info(
                 "[Isleweaver] Beyond owns minecraft:the_end, re-asserted merged End surface rule at createLevels TAIL; "
                         + "preserved {} foreign biome-guarded surface clause(s), dropped foreign unconditional globals, "
-                        + "corrupt barrens fill {}.",
-                foreignBiome.size(), result != beyondRule && CorruptBarrensFill.rule(registryAccess()) != null ? "on" : "off");
+                        + "{} body fill(s).",
+                foreignCount, fills.size());
     }
 }

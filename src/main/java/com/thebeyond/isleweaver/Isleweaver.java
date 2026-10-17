@@ -18,6 +18,7 @@ public final class Isleweaver {
     public Isleweaver(IEventBus modEventBus, ModContainer modContainer) {
         // has to bind before any End biome source is built, so do it here at mod-construct rather than in common setup
         com.thebeyond.isleweaver.compat.unusualend.WarpedReefMacroRegion.register();
+        com.thebeyond.isleweaver.compat.LiftedBodyRule.register(modEventBus);
         modEventBus.addListener(com.thebeyond.isleweaver.lifecycle.IsleweaverLifecycle::onBeyondCommonSetup);
         modEventBus.addListener(com.thebeyond.isleweaver.lifecycle.IsleweaverLifecycle::onBeyondTerrainPackAssemble);
         modEventBus.addListener(com.thebeyond.isleweaver.compat.legendary_monsters.LegendaryMonstersSpawns::onRegisterSpawnPlacements);
