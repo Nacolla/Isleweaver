@@ -195,8 +195,9 @@ public final class EndBiomeDiscovery {
 
             // mixins hand these over in hash order, which changes between runs, and the pool picks by position
             List<Holder<Biome>> found = new ArrayList<>();
-            for (Holder<Biome> holder : transientSource.possibleBiomes()) {
-                holder.unwrapKey().filter(key -> !out.containsKey(key)).ifPresent(key -> found.add(holder));
+            for (Holder<Biome> listed : transientSource.possibleBiomes()) {
+                listed.unwrapKey().filter(key -> !out.containsKey(key)).flatMap(biomeRegistry::getHolder)
+                        .filter(Holder::isBound).ifPresent(found::add);
             }
             found.sort(Comparator.comparing(h -> h.unwrapKey().orElseThrow().location().toString()));
             for (Holder<Biome> holder : found) out.put(holder.unwrapKey().orElseThrow(), holder);

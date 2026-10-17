@@ -3,6 +3,7 @@ package com.thebeyond.isleweaver.mixin.core;
 import com.thebeyond.api.worldgen.BeyondEndBiomeSourceApi;
 import com.thebeyond.isleweaver.Isleweaver;
 import com.thebeyond.isleweaver.compat.SurfaceRuleMerger;
+import com.thebeyond.isleweaver.compat.enderscape.CorruptBarrensFill;
 import net.minecraft.core.Registry;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.Registries;
@@ -53,15 +54,17 @@ public abstract class EndSurfaceRuleReassertMixin {
         if (foreignBiome.isEmpty()) {
             result = beyondRule;
         } else {
-            SurfaceRules.RuleSource[] arr = new SurfaceRules.RuleSource[foreignBiome.size() + 1];
-            for (int i = 0; i < foreignBiome.size(); i++) arr[i] = foreignBiome.get(i);
-            arr[foreignBiome.size()] = beyondRule;   // foreign per-biome clauses first (win in-biome), Beyond's merge as base
-            result = SurfaceRules.sequence(arr);
+            java.util.List<SurfaceRules.RuleSource> rules = new java.util.ArrayList<>(foreignBiome);
+            SurfaceRules.RuleSource corruptFill = CorruptBarrensFill.rule(registryAccess());
+            if (corruptFill != null) rules.add(corruptFill);
+            rules.add(beyondRule);   // foreign per-biome clauses first (win in-biome), Beyond's merge as base
+            result = SurfaceRules.sequence(rules.toArray(new SurfaceRules.RuleSource[0]));
         }
         accessor.isleweaver$setSurfaceRule(result);
         Isleweaver.LOGGER.info(
                 "[Isleweaver] Beyond owns minecraft:the_end, re-asserted merged End surface rule at createLevels TAIL; "
-                        + "preserved {} foreign biome-guarded surface clause(s), dropped foreign unconditional globals.",
-                foreignBiome.size());
+                        + "preserved {} foreign biome-guarded surface clause(s), dropped foreign unconditional globals, "
+                        + "corrupt barrens fill {}.",
+                foreignBiome.size(), result != beyondRule && CorruptBarrensFill.rule(registryAccess()) != null ? "on" : "off");
     }
 }
