@@ -13,7 +13,6 @@ import com.thebeyond.isleweaver.compat.EndFeatureHeightmapFix;
 import com.thebeyond.isleweaver.compat.EndFeatureOrderNormalizer;
 import com.thebeyond.isleweaver.compat.fabricend.FabricEndBiomeSurfaceContributor;
 import com.thebeyond.isleweaver.compat.oak.OakEndBiomeDiscoveryContributor;
-import com.thebeyond.isleweaver.compat.unusualend.WarpedReefMacroRegion;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModList;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -68,14 +67,11 @@ public final class IsleweaverLifecycle {
         if (ModList.get().isLoaded("betterend")) {
             com.thebeyond.isleweaver.compat.betterend.BetterEndVegetationThrottle.apply(event.getServer());
         }
+        if (ModList.get().isLoaded("unusualend")) {
+            com.thebeyond.isleweaver.compat.unusualend.ReefPlacementGuard.apply(event.getServer());
+        }
         EndFeatureHeightmapFix.apply(event.getServer());
         // must follow every feature rewrite: one global per-step order keeps vanilla FeatureSorter from hitting a cycle
         EndFeatureOrderNormalizer.apply(event.getServer());
-        WarpedReefMacroRegion.cache(event.getServer());
-    }
-
-    @SubscribeEvent
-    public static void onBeyondStopped(BeyondServerLifecycleEvent.Stopped event) {
-        WarpedReefMacroRegion.clear();
     }
 }

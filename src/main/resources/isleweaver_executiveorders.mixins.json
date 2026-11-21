@@ -1,0 +1,17 @@
+{
+  "required": false,
+  "package": "com.thebeyond.isleweaver.mixin.executiveorders",
+  "plugin": "com.thebeyond.isleweaver.compat.executiveorders.ExecutiveOrdersMixinPlugin",
+  "compatibilityLevel": "JAVA_21",
+  "refmap": "isleweaver.refmap.json",
+  "mixins": [
+    "StarFallFloorMixin",
+    "VoidBounceProbeMixin",
+    "VoidBounceScaleMixin",
+    "VoidTransmutationFloorMixin"
+  ],
+  "server": [],
+  "injectors": {
+    "defaultRequire": 0
+  }
+}

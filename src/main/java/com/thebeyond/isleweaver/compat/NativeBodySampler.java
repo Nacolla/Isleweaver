@@ -47,7 +47,7 @@ import java.util.function.Predicate;
 
 import org.jetbrains.annotations.Nullable;
 
-/** Gives a foreign biome a lifted body on Beyond islands when its native End islands are nearly free of end stone. */
+// gives a foreign biome a lifted body on Beyond islands when its native End islands are nearly free of end stone
 public final class NativeBodySampler {
     private static final double MAX_DEFAULT_SHARE = 0.15;
     private static final int SAMPLE_CHUNKS = 8;

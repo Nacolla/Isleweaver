@@ -1,15 +1,14 @@
 package com.thebeyond.isleweaver.compat.biomesoplenty;
 
 import com.thebeyond.isleweaver.Isleweaver;
-import net.minecraft.core.Holder;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.biome.Biome;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 public final class BopBiomeConfigFilter {
@@ -47,27 +46,20 @@ public final class BopBiomeConfigFilter {
         }
     }
 
-    public static int filterDisabled(Map<ResourceKey<Biome>, Holder<Biome>> candidates) {
+    public static List<ResourceKey<Biome>> disabledAmong(Collection<ResourceKey<Biome>> candidates) {
         bind();
-        if (!Boolean.TRUE.equals(available) || managedKeys.isEmpty()) return 0;
+        if (!Boolean.TRUE.equals(available) || managedKeys.isEmpty()) return List.of();
 
-        List<ResourceKey<Biome>> remove = new ArrayList<>();
-        for (ResourceKey<Biome> key : candidates.keySet()) {
+        List<ResourceKey<Biome>> off = new ArrayList<>();
+        for (ResourceKey<Biome> key : candidates) {
             if (!managedKeys.contains(key)) continue; // only judge biomes BoP manages
             try {
-                if (!(boolean) isBiomeEnabled.invoke(null, key)) remove.add(key);
+                if (!(boolean) isBiomeEnabled.invoke(null, key)) off.add(key);
             } catch (Throwable t) {
                 Isleweaver.LOGGER.debug("[Isleweaver] BoP isBiomeEnabled({}) failed (non-fatal): {}",
                         key.location(), t.toString());
             }
         }
-
-        remove.forEach(candidates::remove);
-        if (!remove.isEmpty()) {
-            Isleweaver.LOGGER.debug("[Isleweaver] Excluded {} BoP-config-disabled End biome(s): {}",
-                    remove.size(),
-                    remove.stream().map(k -> k.location().toString()).sorted().toList());
-        }
-        return remove.size();
+        return off;
     }
 }

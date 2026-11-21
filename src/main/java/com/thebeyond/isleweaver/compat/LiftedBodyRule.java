@@ -10,7 +10,7 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import org.jetbrains.annotations.Nullable;
 
-/** Paints an island's core with what the wrapped rule gives at the deepest layer of its own shell, top or bottom. */
+// paints an island's core with what the wrapped rule gives at the deepest layer of its own shell, top or bottom
 public record LiftedBodyRule(SurfaceRules.RuleSource rule) implements SurfaceRules.RuleSource {
     private static final int MAX_SHELL = 64;
     static final MapCodec<LiftedBodyRule> MAP_CODEC =
@@ -80,7 +80,7 @@ public record LiftedBodyRule(SurfaceRules.RuleSource rule) implements SurfaceRul
             return deepest;
         }
 
-        // conditions cache by lastUpdateY, so it moves on before and after the held depth
+        // surface conditions cache by lastUpdateY, so it is bumped before and after faking the depth
         private @Nullable BlockState at(boolean floor, int depth, int x, int y, int z) {
             int above = this.context.stoneDepthAbove;
             int below = this.context.stoneDepthBelow;

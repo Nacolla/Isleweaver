@@ -5,7 +5,6 @@ import com.thebeyond.api.event.BeyondBiomeDiscoveryEvent;
 import com.thebeyond.api.worldgen.BeyondBiomeTagScanRegistry;
 import com.thebeyond.api.worldgen.BeyondEndBiomeSourceApi;
 import com.thebeyond.isleweaver.Isleweaver;
-import com.thebeyond.isleweaver.compat.biomesoplenty.BopBiomeConfigFilter;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderGetter;
 import net.minecraft.core.Registry;
@@ -34,7 +33,6 @@ public final class EndBiomeDiscovery {
     private static final TagKey<Biome> IS_END = TagKey.create(Registries.BIOME,
             ResourceLocation.withDefaultNamespace("is_end"));
 
-    // the c: convention tag shared across the NeoForge/Fabric ecosystem
     private static final TagKey<Biome> C_IS_END_BIOME = TagKey.create(Registries.BIOME,
             ResourceLocation.fromNamespaceAndPath("c", "is_end_biome"));
 
@@ -70,8 +68,10 @@ public final class EndBiomeDiscovery {
 
         NeoForge.EVENT_BUS.post(new BeyondBiomeDiscoveryEvent(server, biomeRegistry, candidates));
 
-        // run last so it also prunes anything the event added, per BoP's biome-disable config
-        BopBiomeConfigFilter.filterDisabled(candidates);
+        String order = InjectedBiomeOrder.apply(server, candidates);
+
+        // run last so the toggles also cover anything the event added
+        EndBiomeToggle.Result toggled = EndBiomeToggle.apply(registryAccess, biomeSource, beyondSource, candidates);
 
         if (candidates.isEmpty()) {
             Isleweaver.LOGGER.debug("[Isleweaver] No End biomes found via tags, nothing to auto-discover");
@@ -79,8 +79,10 @@ public final class EndBiomeDiscovery {
         }
 
         int injected = beyondSource.injectBiomesIntoTaintedPool(candidates.values());
+        int off = toggled.disable(beyondSource);
         Isleweaver.LOGGER.info("[Isleweaver] End biomes for the Beyond pool: {} new of {} found"
-                + " (TerraBlender {}, Lithostitched {})", injected, candidates.size(), fromTerraBlender, fromLithostitched);
+                        + " (TerraBlender {}, Lithostitched {}), {} toggled off{}, order {}", injected, candidates.size(),
+                fromTerraBlender, fromLithostitched, off, toggled.summary(), order);
 
         Set<String> namespaces = foreignNamespaces(candidates.values());
         if (injected > 0) {

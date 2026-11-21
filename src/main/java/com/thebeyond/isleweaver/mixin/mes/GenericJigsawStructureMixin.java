@@ -7,6 +7,7 @@ import com.thebeyond.isleweaver.IsleweaverConfig;
 import com.thebeyond.isleweaver.compat.mes.MesHostedStructure;
 import com.thebeyond.isleweaver.compat.mes.MesTuning;
 import com.thebeyond.isleweaver.compat.mes.MoogsEndStructuresProfiles;
+import com.thebeyond.api.worldgen.BeyondEndBiomeSourceApi;
 import com.thebeyond.api.worldgen.BeyondForeignStructureProfiles;
 import com.thebeyond.api.worldgen.BeyondTerrain;
 import com.thebeyond.api.worldgen.BeyondTerrainState;
@@ -72,9 +73,8 @@ public abstract class GenericJigsawStructureMixin implements MesHostedStructure 
         the_beyond$hosted.set(Boolean.FALSE);
         the_beyond$islandSurfaceY.set(Integer.MIN_VALUE);
         try {
-            if (!BeyondTerrainState.isActive()) return;
+            if (!BeyondTerrainState.isActive() || !(context.biomeSource() instanceof BeyondEndBiomeSourceApi)) return;
             Structure self = (Structure) (Object) this;
-            // Dimension gate via biome: MES targets End biomes, so a match means we are in Beyond's End generator.
             boolean endMatch = false;
             for (Holder<Biome> b : self.biomes()) {
                 if (context.chunkGenerator().getBiomeSource().possibleBiomes().contains(b)) { endMatch = true; break; }

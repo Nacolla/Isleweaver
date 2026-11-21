@@ -28,6 +28,8 @@ config = "isleweaver_betterend.mixins.json"
 config = "isleweaver_wover.mixins.json"
 [[mixins]]
 config = "isleweaver_bclib.mixins.json"
+[[mixins]]
+config = "isleweaver_executiveorders.mixins.json"
 
 [[mods]]
 modId="${mod_id}"

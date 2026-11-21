@@ -35,32 +35,31 @@ public abstract class BiomeFilterMixin {
     private void isleweaver$resolveBiome(
             PlacementContext ctx, RandomSource random, BlockPos pos,
             CallbackInfoReturnable<Boolean> cir) {
-        if (!BeyondTerrainState.isActive()) return;
+        if (!BeyondTerrainState.isActive() || !(ctx.generator().getBiomeSource() instanceof BeyondEndBiomeSourceApi)) return;
         if (!ctx.getLevel().getBlockState(pos).isAir()) return;
 
-        Holder<Biome> biome;
         if (isleweaver$isVoronoiFloatingFeature(ctx)) {
-            biome = isleweaver$lookupVoronoiBiome(ctx.getLevel(), pos);
-            if (biome == null) return;
-        } else {
-            BlockPos.MutableBlockPos probe = new BlockPos.MutableBlockPos(pos.getX(), 0, pos.getZ());
-            boolean foundSurface = false;
-            for (int dy = 1; dy <= 4; dy++) {
-                probe.setY(pos.getY() - dy);
-                if (!ctx.getLevel().getBlockState(probe).isAir()) {
-                    foundSurface = true;
-                    break;
-                }
-            }
-            if (!foundSurface) return;
-            biome = ctx.getLevel().getBiome(probe);
+            Holder<Biome> cell = isleweaver$lookupVoronoiBiome(ctx.getLevel(), pos);
+            // a reef listed as a void biome is no Voronoi cell, so vanilla's check of the real biome decides
+            if (cell == null || !isleweaver$hasTopFeature(ctx, cell)) return;
+            cir.setReturnValue(true);
+            return;
         }
+        BlockPos.MutableBlockPos probe = new BlockPos.MutableBlockPos(pos.getX(), 0, pos.getZ());
+        boolean foundSurface = false;
+        for (int dy = 1; dy <= 4; dy++) {
+            probe.setY(pos.getY() - dy);
+            if (!ctx.getLevel().getBlockState(probe).isAir()) {
+                foundSurface = true;
+                break;
+            }
+        }
+        if (!foundSurface) return;
+        cir.setReturnValue(isleweaver$hasTopFeature(ctx, ctx.getLevel().getBiome(probe)));
+    }
 
-        final Holder<Biome> resolved = biome;
-        boolean result = ctx.topFeature()
-            .filter(feature -> resolved.value().getGenerationSettings().hasFeature(feature))
-            .isPresent();
-        cir.setReturnValue(result);
+    private static boolean isleweaver$hasTopFeature(PlacementContext ctx, Holder<Biome> biome) {
+        return ctx.topFeature().filter(feature -> biome.value().getGenerationSettings().hasFeature(feature)).isPresent();
     }
 
     private static boolean isleweaver$isVoronoiFloatingFeature(PlacementContext ctx) {

@@ -11,7 +11,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.levelgen.SurfaceRules;
 import org.jetbrains.annotations.Nullable;
 
-/** Enderscape 1.0.9 keeps corrupt barrens mirestone within surface depth, 2.x fills the whole biome and wins before this rule. */
+// Enderscape 1.0.9 keeps corrupt barrens mirestone within surface depth, 2.x fills the whole biome and wins before this rule
 public final class CorruptBarrensFill {
     private static final ResourceKey<Biome> CORRUPT_BARRENS =
             ResourceKey.create(Registries.BIOME, ResourceLocation.fromNamespaceAndPath("enderscape", "corrupt_barrens"));
