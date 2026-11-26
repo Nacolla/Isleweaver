@@ -2,8 +2,10 @@ package com.thebeyond.isleweaver.mixin.quark;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
+import net.minecraft.core.QuartPos;
+import net.minecraft.server.level.ServerChunkCache;
 import net.minecraft.world.level.LevelAccessor;
-import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.levelgen.Heightmap;
@@ -35,10 +37,12 @@ public abstract class ZetaGeneratorGetBiomeMixin {
         DimensionType dim = world.dimensionType();
         if (dim.natural() || dim.hasCeiling() || dim.ultraWarm()) return;
 
-        if (!(world instanceof LevelReader lr)) return;
+        if (!(world instanceof WorldGenLevel level)) return;
 
-        int surfaceY = lr.getHeight(Heightmap.Types.WORLD_SURFACE_WG, pos.getX(), pos.getZ());
-        BlockPos sample = new BlockPos(pos.getX(), surfaceY, pos.getZ());
-        cir.setReturnValue(world.getBiomeManager().getBiome(sample));
+        ServerChunkCache chunks = level.getLevel().getChunkSource();
+        int surfaceY = chunks.getGenerator().getBaseHeight(pos.getX(), pos.getZ(), Heightmap.Types.WORLD_SURFACE_WG, world,
+                chunks.randomState());
+        cir.setReturnValue(world.getUncachedNoiseBiome(QuartPos.fromBlock(pos.getX()), QuartPos.fromBlock(surfaceY),
+                QuartPos.fromBlock(pos.getZ())));
     }
 }
