@@ -1,5 +1,7 @@
 package com.thebeyond.isleweaver.mixin.quark;
 
+import com.thebeyond.api.worldgen.BeyondEndBiomeSourceApi;
+import com.thebeyond.api.worldgen.BeyondTerrainState;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.QuartPos;
@@ -7,7 +9,6 @@ import net.minecraft.server.level.ServerChunkCache;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.biome.Biome;
-import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.levelgen.Heightmap;
 
 import org.spongepowered.asm.mixin.Mixin;
@@ -33,13 +34,10 @@ public abstract class ZetaGeneratorGetBiomeMixin {
 
         if (!offset) return;
 
-        // there's no DimensionType.isEnd(), so detect the End by ruling out Overworld (natural) and Nether (ceiling/ultraWarm)
-        DimensionType dim = world.dimensionType();
-        if (dim.natural() || dim.hasCeiling() || dim.ultraWarm()) return;
-
         if (!(world instanceof WorldGenLevel level)) return;
 
         ServerChunkCache chunks = level.getLevel().getChunkSource();
+        if (!BeyondTerrainState.isActive() || !(chunks.getGenerator().getBiomeSource() instanceof BeyondEndBiomeSourceApi)) return;
         int surfaceY = chunks.getGenerator().getBaseHeight(pos.getX(), pos.getZ(), Heightmap.Types.WORLD_SURFACE_WG, world,
                 chunks.randomState());
         cir.setReturnValue(world.getUncachedNoiseBiome(QuartPos.fromBlock(pos.getX()), QuartPos.fromBlock(surfaceY),

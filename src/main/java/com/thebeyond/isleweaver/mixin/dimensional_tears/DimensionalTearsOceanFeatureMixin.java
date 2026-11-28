@@ -1,5 +1,7 @@
 package com.thebeyond.isleweaver.mixin.dimensional_tears;
 
+import com.thebeyond.api.worldgen.BeyondEndBiomeSourceApi;
+import com.thebeyond.api.worldgen.BeyondTerrainState;
 import net.minecraft.world.level.levelgen.feature.FeaturePlaceContext;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Pseudo;
@@ -16,6 +18,8 @@ public abstract class DimensionalTearsOceanFeatureMixin {
     private void isleweaver$cancelDTOceanLayer(
             FeaturePlaceContext<?> context,
             CallbackInfoReturnable<Boolean> cir) {
-        cir.setReturnValue(false);
+        if (BeyondTerrainState.isActive() && context.chunkGenerator().getBiomeSource() instanceof BeyondEndBiomeSourceApi) {
+            cir.setReturnValue(false);
+        }
     }
 }

@@ -1,7 +1,10 @@
 package com.thebeyond.isleweaver.mixin.bclib;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
+import com.llamalad7.mixinextras.sugar.Local;
+import com.thebeyond.api.worldgen.BeyondEndBiomeSourceApi;
 import com.thebeyond.isleweaver.compat.betterend.BetterEndYGate;
+import net.minecraft.world.level.levelgen.structure.Structure;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.injection.At;
@@ -17,7 +20,8 @@ public abstract class TemplateStructureMixin {
             target = "Lnet/minecraft/world/level/chunk/ChunkGenerator;getSeaLevel()I"
         )
     )
-    private int isleweaver$lowerSeaLevelFloor(int original) {
+    private int isleweaver$lowerSeaLevelFloor(int original, @Local(argsOnly = true) Structure.GenerationContext context) {
+        if (!(context.chunkGenerator().getBiomeSource() instanceof BeyondEndBiomeSourceApi)) return original;
         return BetterEndYGate.dimFloor(original);
     }
 }
